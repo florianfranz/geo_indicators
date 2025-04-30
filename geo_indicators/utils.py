@@ -1,0 +1,71 @@
+import os
+import rasterio
+from rasterio.warp import reproject, calculate_default_transform, Resampling
+from pyproj import CRS
+
+
+def get_input_raster_path():
+    """
+    Get the absolute path of the input raster file (inside the data folder)
+    """
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # One level above current file
+    data_dir = os.path.join(project_root, 'data')  # 'data' folder at the project root
+    input_raster = os.path.join(data_dir, 'ETOPO_2022_global_ice_r0.1.tif')
+
+    return input_raster
+
+
+def get_reprojected_raster_path():
+    """
+    Get the absolute path to the reprojected raster (that will be saved inside the 'data' folder).
+    """
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(project_root, 'data')
+    reprojected_raster = os.path.join(data_dir,
+                                      'reprojected_ETOPO_2022_global_ice.tif')
+    return reprojected_raster
+
+def load_tiff(file_path):
+    """
+    load the .tif raster from the file_path, return the data and associated metadata
+    """
+    with rasterio.open(file_path) as src:
+        data = src.read()
+        metadata = src.meta
+    return data, metadata
+
+
+def reproject_raster(input_raster, output_raster, target_crs="ESRI:54034"):
+    """
+    Reproject the raster from its original CRS (EPSG:4326) to a target CRS with meters units (here ESRI:54034) using rasterio and pyproj.
+
+    Parameters:
+    - input_raster (str): Path to the input raster file.
+    - output_raster (str): Path to save the reprojected raster.
+    - target_crs (str): The target CRS to reproject to (default is EPSG:54034).
+    """
+    print(f"Opening input raster at: {input_raster}")  # Debug print
+
+    with rasterio.open(input_raster) as src:
+        src_crs = src.crs
+
+        # Create the target CRS object using pyproj
+        target_proj = CRS(target_crs)
+
+        # Calculate the transform, width, and height for the new CRS
+        transform, width, height = calculate_default_transform(
+            src_crs, target_proj, src.width, src.height, *src.bounds
+        )
+
+        # Create the output raster with the new CRS and transform
+        with rasterio.open(output_raster, 'w', driver='GTiff', height=height, width=width,
+                           count=src.count, dtype=src.dtypes[0], crs=target_proj, transform=transform) as dst:
+            for i in range(1, src.count + 1):  # Loop through each band in the raster
+                # Reproject the data from the source CRS to the target CRS
+                reproject(
+                    source=rasterio.band(src, i),
+                    destination=rasterio.band(dst, i),
+                    src_crs=src_crs,
+                    dst_crs=target_proj,
+                    resampling=Resampling.nearest
+                )
