@@ -1,5 +1,8 @@
 from setuptools import setup, find_packages
 
+with open('requirements.txt', encoding='utf-8') as f:
+    required = f.read().splitlines()
+
 setup(
     name='geo_indicators',
     version='0.1',
@@ -8,8 +11,7 @@ setup(
     author_email='florian.franziskakis@unige.ch, niklas.werner@eaps.ethz.ch',
     license='GPLv3',
     packages=find_packages(),
-    install_requires=[
-    ],
+    install_requires=required,
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
