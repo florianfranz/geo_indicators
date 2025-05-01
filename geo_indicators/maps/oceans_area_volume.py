@@ -55,5 +55,5 @@ def process_area_volume():
 # Example usage
 if __name__ == "__main__":
     area, volume = process_area_volume()
-    print(f"Area below sea level: {area / 1e6:.2f} m²")
-    print(f"Volume below sea level: {volume / 1e9:.2f} m³")
+    print(f"Area below sea level: {area:.2e} m²")
+    print(f"Volume below sea level: {volume:.2e} m³")
