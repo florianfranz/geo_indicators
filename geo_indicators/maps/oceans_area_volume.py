@@ -3,9 +3,7 @@ import rasterio
 from geo_indicators.utils import load_tiff, reproject_raster, get_input_raster_path, get_reprojected_raster_path
 
 
-
-
-def calculate_area_volume_below_zero(data, transform):
+def oceans_area_volume(data, transform):
     """
     Calculate the area and volume of pixels below sea level (elevation < 0).
 
@@ -49,7 +47,7 @@ def process_area_volume():
     with rasterio.open(reprojected_raster) as src:
         transform = src.transform
 
-    area, volume = calculate_area_volume_below_zero(data[0], transform)  # data[0] is the first band
+    area, volume = oceans_area_volume(data[0], transform)  # data[0] is the first band
 
     return area, volume
 
