@@ -2,6 +2,8 @@ import os
 import rasterio
 from rasterio.warp import reproject, calculate_default_transform, Resampling
 from pyproj import CRS
+import geopandas as gpd
+
 
 
 def get_input_raster_path():
@@ -13,6 +15,18 @@ def get_input_raster_path():
     input_raster = os.path.join(data_dir, 'ETOPO_2022_global_ice_r0.1.tif')
 
     return input_raster
+
+def get_reproj_latitudes_bounds_path():
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # One level above current file
+    data_dir = os.path.join(project_root, 'data')
+    input_latitudes_path = os.path.join(data_dir, 'reproj_latitudes.geojson')
+
+    return input_latitudes_path
+
+def load_reproj_latitudes_bounds(file_path):
+    gdf = gpd.read_file(file_path)
+
+    return gdf
 
 
 def get_reprojected_raster_path():

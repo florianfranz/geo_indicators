@@ -1,7 +1,6 @@
 import numpy as np
 import rasterio
 from rasterio.features import rasterize
-import geopandas as gpd
 import matplotlib.pyplot as plt
 
 
@@ -9,15 +8,17 @@ from geo_indicators.utils import (
     load_tiff,
     reproject_raster,
     get_input_raster_path,
-    get_reprojected_raster_path
+    get_reprojected_raster_path,
+    get_reproj_latitudes_bounds_path,
+    load_reproj_latitudes_bounds
 )
 
 def get_polar_mask(raster_meta, raster_shape):
     """
     Generate a binary mask where True indicates pixels either north of Polar_N or south of Polar_S.
     """
-    geojson_path = r"C:\Users\franzisf\PycharmProjects\geo_indicators\data\reproj_latitudes.geojson"
-    gdf = gpd.read_file(geojson_path)
+    latitudes_path = get_reproj_latitudes_bounds_path()
+    gdf = load_reproj_latitudes_bounds(latitudes_path)
 
     required_lines = ['Polar_N', 'Polar_S']
     if not all(name in gdf['name'].values for name in required_lines):
