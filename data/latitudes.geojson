@@ -1,0 +1,83 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                  [-180,60],
+                  [180,60]
+                ]
+            },
+            "properties": {
+                "name": "Polar_N"
+            }
+        },
+      {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                  [-180,-60],
+                  [180,-60]
+                ]
+            },
+            "properties": {
+                "name": "Polar_S"
+            }
+        },
+      {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                  [-180,40],
+                  [180,40]
+                ]
+            },
+            "properties": {
+                "name": "Temperate_N"
+            }
+        },
+      {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                  [-180,-40],
+                  [180,-40]
+                ]
+            },
+            "properties": {
+                "name": "Temperate_S"
+            }
+        },
+      {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                  [-180,23.5],
+                  [180,23.5]
+                ]
+            },
+            "properties": {
+                "name": "Subtropical_N"
+            }
+        },
+      {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                  [-180,-23.5],
+                  [180,-23.5]
+                ]
+            },
+            "properties": {
+                "name": "Subtropical_S"
+            }
+        }
+    ]
+}
