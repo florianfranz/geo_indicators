@@ -1,4 +1,8 @@
+geopandas==1.0.1
+matplotlib==3.10.1
 numpy==2.2.5
 pyproj==3.7.1
 rasterio==1.4.3
 setuptools==79.0.1
+Shapely==2.1.0
+skimage==0.0
