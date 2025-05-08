@@ -20,10 +20,7 @@ def process_shelves_area():
 
     # Load the reprojected raster data
     data, metadata = load_tiff(reprojected_raster)
-
-    # Assuming 'transform' is in metadata, otherwise, fetch it from the rasterio object
-    with rasterio.open(reprojected_raster) as src:
-        transform = src.transform
+    transform = metadata['transform']
 
     pixel_area = abs(transform[0] * transform[4])  # width * height of a pixel in meters
     shelves_mask = (data[0] >= -300) & (data[0] < 0)  # Mask the pixels where the elevation is between -300 and 0m

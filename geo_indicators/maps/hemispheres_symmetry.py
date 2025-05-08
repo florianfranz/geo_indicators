@@ -68,10 +68,8 @@ def process_hemispheres_area():
 
     # Load the reprojected raster data
     data, metadata = load_tiff(reprojected_raster)
+    transform = metadata['transform']
 
-    # Fetch transform for pixel area
-    with rasterio.open(reprojected_raster) as src:
-        transform = src.transform
 
     pixel_area = abs(transform[0] * transform[4])  # pixel width × height in meters
     elevation = data[0]

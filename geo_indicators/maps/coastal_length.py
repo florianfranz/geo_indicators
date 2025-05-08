@@ -1,6 +1,5 @@
 from skimage import measure
 from shapely.geometry import Polygon, Point
-import rasterio
 import geopandas as gpd
 import matplotlib.pyplot as plt
 
@@ -63,9 +62,8 @@ def create_contours():
 
     # Load the reprojected raster data
     data, metadata = load_tiff(reprojected_raster)
+    transform = metadata['transform']
 
-    with rasterio.open(reprojected_raster) as src:
-        transform = src.transform
     polygons = []
     contours = measure.find_contours(data[0], 0)
     for contour in contours:

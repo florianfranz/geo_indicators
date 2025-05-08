@@ -42,10 +42,8 @@ def process_area_volume():
 
     # Load the reprojected raster data
     data, metadata = load_tiff(reprojected_raster)
+    transform = metadata['transform']
 
-    # Assuming 'transform' is in metadata, otherwise, fetch it from the rasterio object
-    with rasterio.open(reprojected_raster) as src:
-        transform = src.transform
 
     area, volume = oceans_area_volume(data[0], transform)  # data[0] is the first band
 

@@ -20,10 +20,8 @@ def process_high_altitudes_area():
 
     # Load the reprojected raster data
     data, metadata = load_tiff(reprojected_raster)
+    transform = metadata['transform']
 
-    # Assuming 'transform' is in metadata, otherwise, fetch it from the rasterio object
-    with rasterio.open(reprojected_raster) as src:
-        transform = src.transform
 
     pixel_area = abs(transform[0] * transform[4])  # width * height of a pixel in meters
     high_altitude_mask = data[0] >= 3000  # Mask the pixels where the elevation is above 3000m
