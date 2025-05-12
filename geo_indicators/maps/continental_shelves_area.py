@@ -1,7 +1,6 @@
 import numpy as np
-import rasterio
 from geo_indicators.utils import load_tiff, reproject_raster, get_input_raster_path, get_reprojected_raster_path
-import matplotlib.pyplot as plt
+from geo_indicators.visualization import plot_mask
 
 
 def process_shelves_area():
@@ -24,18 +23,11 @@ def process_shelves_area():
 
     pixel_area = abs(transform[0] * transform[4])  # width * height of a pixel in meters
     shelves_mask = (data[0] >= -300) & (data[0] < 0)  # Mask the pixels where the elevation is between -300 and 0m
+    plot_mask(shelves_mask, "Continental Shelves (-300m >= z > 0m)")
 
     # Calculate area (count of pixels * pixel area)
     shelves_area = np.sum(shelves_mask) * pixel_area
     total_area = data[0].size * pixel_area
-    plt.figure(figsize=(10, 6))
-    plt.imshow(shelves_mask, cmap='Greys', interpolation='none')
-    plt.title("Continental Shelves")
-    plt.xlabel("X (pixel index)")
-    plt.ylabel("Y (pixel index)")
-    plt.tight_layout()
-    plt.show()
-
 
     return shelves_area, total_area
 

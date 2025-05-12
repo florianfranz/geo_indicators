@@ -1,6 +1,6 @@
 import numpy as np
-import rasterio
 from geo_indicators.utils import load_tiff, reproject_raster, get_input_raster_path, get_reprojected_raster_path
+from geo_indicators.visualization import plot_mask
 
 
 def process_area():
@@ -21,20 +21,18 @@ def process_area():
     data, metadata = load_tiff(reprojected_raster)
     transform = metadata['transform']
 
-
     pixel_area = abs(transform[0] * transform[4])  # width * height of a pixel in meters
     land_mask = data[0] >= 0  # Mask the pixels where the elevation is above or equal to sea level
+    plot_mask(land_mask, "Land (z >= 0m)")
 
     # Calculate area (count of pixels * pixel area)
     land_area = np.sum(land_mask) * pixel_area
     total_area = data[0].size * pixel_area
 
-
     return land_area, total_area
 
 
 if __name__ == "__main__":
-
     land_area, total_area = process_area()
     land_percentage = land_area/total_area*100
     print(f"Total land area: {land_area:.2e} m²")

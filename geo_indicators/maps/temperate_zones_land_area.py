@@ -1,9 +1,6 @@
 import numpy as np
-import rasterio
 from rasterio.features import rasterize
-import matplotlib.pyplot as plt
-
-
+from geo_indicators.visualization import plot_mask
 from geo_indicators.utils import (
     load_tiff,
     reproject_raster,
@@ -12,6 +9,7 @@ from geo_indicators.utils import (
     get_reproj_latitudes_bounds_path,
     load_reproj_latitudes_bounds
 )
+
 
 def get_temperate_mask(raster_meta, raster_shape):
     """
@@ -86,17 +84,9 @@ def process_temperate_area():
 
     # Get temperate region mask
     temperate_mask = get_temperate_mask(metadata, elevation.shape)
-
     # Combined mask: land AND within temperate regions
     combined_mask = np.logical_and(land_mask, temperate_mask)
-    plt.figure(figsize=(10, 6))
-    plt.imshow(combined_mask, cmap='Greys', interpolation='none')
-    plt.title("Land Pixels in Temperate Regions")
-    plt.xlabel("X (pixel index)")
-    plt.ylabel("Y (pixel index)")
-    plt.tight_layout()
-    plt.show()
-
+    plot_mask(combined_mask, "Temperate Land ( 40° < Latitude > 60° N/S)")
     # Area calculations
     total_area = elevation.size * pixel_area
     temperate_land_area = np.sum(combined_mask) * pixel_area
