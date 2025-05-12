@@ -23,3 +23,10 @@ def plot_passage(mask, routes):
     plt.title('Best Ocean Passage (Red)')
     plt.grid(True)
     plt.show()
+
+def plot_gdf_simple(gdf, title):
+    gdf.plot(edgecolor='black', facecolor='none', linewidth=0.5)
+    plt.title(title)
+    plt.xlabel("Longitude (in meters)")
+    plt.ylabel("Latitude (in meters)")
+    plt.show()

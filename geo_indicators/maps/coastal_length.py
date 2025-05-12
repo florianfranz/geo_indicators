@@ -1,8 +1,8 @@
 from skimage import measure
 from shapely.geometry import Polygon, Point
 import geopandas as gpd
-import matplotlib.pyplot as plt
 
+from geo_indicators.visualization import plot_gdf_simple
 from geo_indicators.utils import load_tiff, reproject_raster, get_input_raster_path, get_reprojected_raster_path
 
 
@@ -106,11 +106,6 @@ def calculate_total_length(gdf):
 
 if __name__ == "__main__":
     coastlines = create_contours()
-    coastlines.plot(edgecolor='black', facecolor='none', linewidth=0.5)
-    plt.title("Detected Coastlines")
-    plt.xlabel("Longitude (in meters)")
-    plt.ylabel("Latitude (in meters)")
-
-    plt.show()
+    plot_gdf_simple(coastlines, "Coastlines")
     total_coastline_length = calculate_total_length(coastlines)
     print(f"Total coastline length is {total_coastline_length} m")
