@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
+from geo_indicators.visualization import plot_passage
 from geo_indicators.utils import load_tiff, get_input_raster_path
 
 
@@ -87,30 +87,11 @@ def find_routes(sea_mask):
         routes = new_routes
     return routes
 
-def plot_best_passage(sea_mask):
-    """
-    Plot the sea mask and overlay the best passage in red.
-    """
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.imshow(sea_mask, cmap='Blues', origin='lower')  # Sea=0, Land=1
-
-    routes = find_routes(sea_mask)
-
-    for route in routes:
-        x_coords = range(len(route))
-        y_coords = [step.center for step in route]
-        ax.plot(x_coords, y_coords, color='red', linewidth=2)
-
-    plt.xlabel('Longitude Index')
-    plt.ylabel('Latitude Index')
-    plt.title('Best Ocean Passage (Red)')
-    plt.grid(True)
-    plt.show()
-
 
 if __name__ == '__main__':
     raster_path = get_input_raster_path()
     elevation_data, metadata = load_tiff(raster_path)
     nodata_value = metadata.get('nodata', None)
     sea_mask = build_sea_mask(elevation_data, nodata_value=nodata_value)
-    plot_best_passage(sea_mask)
+    routes = find_routes(sea_mask)
+    plot_passage(sea_mask,routes)
