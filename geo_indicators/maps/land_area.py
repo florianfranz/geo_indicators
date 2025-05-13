@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from geo_indicators.utils import load_tiff, reproject_raster, get_input_raster_path, get_reprojected_raster_path
 from geo_indicators.visualization import plot_mask
@@ -10,15 +11,19 @@ def process_area():
     Returns:
     - tuple: (area in square meters, volume in cubic meters).
     """
-    # Dynamically get the paths for input and reprojected raster
     input_raster = get_input_raster_path()
     reprojected_raster = get_reprojected_raster_path()
 
-    # Reproject the raster before processing
-    reproject_raster(input_raster, reprojected_raster)
+    # Check if the reprojected raster already exists
+    if os.path.exists(reprojected_raster):
+        # Load the reprojected raster data
+        data, metadata = load_tiff(reprojected_raster)
+    else:
+        # Reproject the raster before processing
+        reproject_raster(input_raster, reprojected_raster)
+        # Load the reprojected raster data
+        data, metadata = load_tiff(reprojected_raster)
 
-    # Load the reprojected raster data
-    data, metadata = load_tiff(reprojected_raster)
     transform = metadata['transform']
 
     pixel_area = abs(transform[0] * transform[4])  # width * height of a pixel in meters
@@ -37,4 +42,4 @@ if __name__ == "__main__":
     land_percentage = land_area/total_area*100
     print(f"Total land area: {land_area:.2e} m²")
     print(f"Total raster area: {total_area:.2e} m²")
-    print(f"Percentage of land is {land_percentage}")
+    print(f"Percentage of land is {land_percentage}%")

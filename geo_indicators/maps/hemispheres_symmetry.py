@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from rasterio.features import rasterize
 
@@ -57,15 +58,18 @@ def process_hemispheres_area():
     Returns:
     - tuple: (northern and southern hemispheres land area m²)
     """
-    # Dynamically get the paths for input and reprojected raster
     input_raster = get_input_raster_path()
     reprojected_raster = get_reprojected_raster_path()
 
-    # Reproject the raster before processing
-    reproject_raster(input_raster, reprojected_raster)
-
-    # Load the reprojected raster data
-    data, metadata = load_tiff(reprojected_raster)
+    # Check if the reprojected raster already exists
+    if os.path.exists(reprojected_raster):
+        # Load the reprojected raster data
+        data, metadata = load_tiff(reprojected_raster)
+    else:
+        # Reproject the raster before processing
+        reproject_raster(input_raster, reprojected_raster)
+        # Load the reprojected raster data
+        data, metadata = load_tiff(reprojected_raster)
     transform = metadata['transform']
 
 

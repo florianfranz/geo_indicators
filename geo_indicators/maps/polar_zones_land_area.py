@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from rasterio.features import rasterize
 from geo_indicators.visualization import plot_mask
@@ -59,15 +60,18 @@ def process_polar_area():
     Returns:
     - tuple: (land area m², total area m², polar land area m²)
     """
-    # Dynamically get the paths for input and reprojected raster
     input_raster = get_input_raster_path()
     reprojected_raster = get_reprojected_raster_path()
 
-    # Reproject the raster before processing
-    reproject_raster(input_raster, reprojected_raster)
-
-    # Load the reprojected raster data
-    data, metadata = load_tiff(reprojected_raster)
+    # Check if the reprojected raster already exists
+    if os.path.exists(reprojected_raster):
+        # Load the reprojected raster data
+        data, metadata = load_tiff(reprojected_raster)
+    else:
+        # Reproject the raster before processing
+        reproject_raster(input_raster, reprojected_raster)
+        # Load the reprojected raster data
+        data, metadata = load_tiff(reprojected_raster)
     transform = metadata['transform']
 
     pixel_area = abs(transform[0] * transform[4])  # pixel width × height in meters
