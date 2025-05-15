@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from geo_indicators.utils import load_tiff, reproject_raster, get_input_raster_path, get_reprojected_raster_path
 from geo_indicators.visualization import plot_mask
