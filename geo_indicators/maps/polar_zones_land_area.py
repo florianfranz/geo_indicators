@@ -84,7 +84,7 @@ def get_polar_area(data, metadata, transform, plot=False):
 
     return total_area, polar_land_area
 
-def process_polar_land_area(source):
+def process_polar_land_area(source,version):
     if source == "ETOPO":
         input_raster = get_input_raster_path()
         reprojected_raster = get_reprojected_raster_path()
@@ -100,7 +100,7 @@ def process_polar_land_area(source):
         print(f"Polar land area: {polar_land_area:.2e} m²")
         print(f"Percentage of polar land: {polar_percentage:.2f}%")
     elif source == "PANALESIS":
-        panalesis_maps = get_panalesis_maps("v1")
+        panalesis_maps = get_panalesis_maps(version)
         ages = []
         polar_land_areas = []
         for map in panalesis_maps:
@@ -115,13 +115,17 @@ def process_polar_land_area(source):
             print(f"Total raster area: {total_area:.2e} m²")
             print(f"Polar land area: {polar_land_area:.2e} m²")
             print(f"Percentage of polar land: {polar_percentage:.2f}%")
+        combined = list(zip(ages, polar_land_areas))
+        combined.sort(key=lambda x: x[0])
+        ages, polar_land_areas = zip(*combined)
         plot_timeseries_simple(ages, polar_land_areas, 'Polar Land Area (m²)', 'Polar Land Area vs Age')
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
 
 if __name__ == "__main__":
     source = "PANALESIS"
-    process_polar_land_area(source)
+    version = "v1"
+    process_polar_land_area(source,version)
 
 
 

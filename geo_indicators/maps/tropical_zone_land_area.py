@@ -84,7 +84,7 @@ def get_tropical_area(data, metadata, transform, plot=False):
     return total_area, tropical_land_area
 
 
-def process_tropical_land_area(source):
+def process_tropical_land_area(source,version):
     if source == "ETOPO":
         input_raster = get_input_raster_path()
         reprojected_raster = get_reprojected_raster_path()
@@ -100,7 +100,7 @@ def process_tropical_land_area(source):
         print(f"Tropical land area: {tropical_land_area:.2e} m²")
         print(f"Percentage of tropical land: {tropical_percentage:.2f}%")
     elif source == "PANALESIS":
-        panalesis_maps = get_panalesis_maps("v1")
+        panalesis_maps = get_panalesis_maps(version)
         ages = []
         tropical_land_areas = []
         for map in panalesis_maps:
@@ -115,6 +115,9 @@ def process_tropical_land_area(source):
             print(f"Total raster area: {total_area:.2e} m²")
             print(f"Tropical land area: {tropical_land_area:.2e} m²")
             print(f"Percentage of tropical land: {tropical_percentage:.2f}%")
+        combined = list(zip(ages, tropical_land_areas))
+        combined.sort(key=lambda x: x[0])
+        ages, tropical_land_areas = zip(*combined)
         plot_timeseries_simple(ages, tropical_land_areas, 'Tropical Land Area (m²)',
                                'Tropical Land Area vs Age')
     else:
@@ -123,4 +126,5 @@ def process_tropical_land_area(source):
 
 if __name__ == "__main__":
     source = "PANALESIS"
-    process_tropical_land_area(source)
+    version = "v1"
+    process_tropical_land_area(source,version)

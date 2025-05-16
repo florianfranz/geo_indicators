@@ -23,7 +23,7 @@ def get_shelves_area(data, transform, plot=False):
 
     return shelves_area, total_area
 
-def process_shelves_area(source):
+def process_shelves_area(source,version):
     if source == "ETOPO":
         input_raster = get_input_raster_path()
         reprojected_raster = get_reprojected_raster_path()
@@ -39,7 +39,7 @@ def process_shelves_area(source):
         print(f"Total raster area: {total_area:.2e} m²")
         print(f"Percentage of shelves is {shelves_percentage}")
     elif source == "PANALESIS":
-        panalesis_maps = get_panalesis_maps("v1")
+        panalesis_maps = get_panalesis_maps(version)
         ages = []
         shelves_areas = []
         for map in panalesis_maps:
@@ -54,6 +54,9 @@ def process_shelves_area(source):
             print(f"Total shelves area: {shelves_area:.2e} m²")
             print(f"Total raster area: {total_area:.2e} m²")
             print(f"Percentage of shelves is {shelves_percentage}")
+        combined = list(zip(ages, shelves_areas))
+        combined.sort(key=lambda x: x[0])
+        ages, shelves_areas = zip(*combined)
         plot_timeseries_simple(ages,shelves_areas, 'Shelves Area (m²)', 'Shelves Area vs Age')
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
@@ -61,4 +64,5 @@ def process_shelves_area(source):
 
 if __name__ == "__main__":
     source = "PANALESIS"
-    process_shelves_area(source)
+    version = "v1"
+    process_shelves_area(source,version)

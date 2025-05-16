@@ -31,7 +31,7 @@ def get_high_altitudes_area(data, transform, plot=False):
 
     return high_altitude_area, total_area
 
-def process_high_altitude_area(source):
+def process_high_altitude_area(source,version):
     if source == "ETOPO":
         input_raster = get_input_raster_path()
         reprojected_raster = get_reprojected_raster_path()
@@ -47,7 +47,7 @@ def process_high_altitude_area(source):
         print(f"Total raster area: {total_area:.2e} m²")
         print(f"Percentage of high altitude regions is {high_altitude_percentage}")
     elif source == "PANALESIS":
-        panalesis_maps = get_panalesis_maps("v1")
+        panalesis_maps = get_panalesis_maps(version)
         ages = []
         high_altitudes_areas = []
         for map in panalesis_maps:
@@ -62,6 +62,9 @@ def process_high_altitude_area(source):
             print(f"Total high altitude area: {high_altitude_area:.2e} m²")
             print(f"Total raster area: {total_area:.2e} m²")
             print(f"Percentage of high altitude regions is {high_altitude_percentage}")
+        combined = list(zip(ages, high_altitudes_areas))
+        combined.sort(key=lambda x: x[0])
+        ages, high_altitudes_areas = zip(*combined)
         plot_timeseries_simple(ages, high_altitudes_areas, 'High Altitude Area (m²)',
                                'High Altitude Regions (z >=3000m)')
     else:
@@ -70,5 +73,6 @@ def process_high_altitude_area(source):
 
 if __name__ == "__main__":
     source = "PANALESIS"
-    process_high_altitude_area(source)
+    version = "v1"
+    process_high_altitude_area(source,version)
 

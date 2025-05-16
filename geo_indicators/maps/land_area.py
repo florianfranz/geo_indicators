@@ -23,7 +23,7 @@ def get_land_area(data,transform, plot=False):
 
     return land_area, total_area
 
-def process_land_area(source):
+def process_land_area(source,version):
     if source == "ETOPO":
         input_raster = get_input_raster_path()
         reprojected_raster = get_reprojected_raster_path()
@@ -39,7 +39,7 @@ def process_land_area(source):
         print(f"Total raster area: {total_area:.2e} m²")
         print(f"Percentage of land is {land_percentage}%")
     elif source == "PANALESIS":
-        panalesis_maps = get_panalesis_maps("v1")
+        panalesis_maps = get_panalesis_maps(version)
         ages = []
         land_areas = []
         for map in panalesis_maps:
@@ -54,6 +54,9 @@ def process_land_area(source):
             print(f"Total land area: {land_area:.2e} m²")
             print(f"Total raster area: {total_area:.2e} m²")
             print(f"Percentage of land is {land_percentage}%")
+        combined = list(zip(ages, land_areas))
+        combined.sort(key=lambda x: x[0])
+        ages, land_areas = zip(*combined)
         plot_timeseries_simple(ages, land_areas, 'Land Area (m²)', 'Land Area vs Age')
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
@@ -61,4 +64,5 @@ def process_land_area(source):
 
 if __name__ == "__main__":
     source = "PANALESIS"
-    process_land_area(source)
+    version = "v1"
+    process_land_area(source,version)

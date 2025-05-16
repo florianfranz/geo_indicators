@@ -83,7 +83,7 @@ def get_hemispheres_area(data,metadata,transform,plot=False):
 
     return total_area, northern_land_area,southern_land_area
 
-def process_hemispheres_area(source):
+def process_hemispheres_area(source,version):
     if source == "ETOPO":
         input_raster = get_input_raster_path()
         reprojected_raster = get_reprojected_raster_path()
@@ -104,7 +104,7 @@ def process_hemispheres_area(source):
         print(f"Percentage of southern land: {southern_percentage:.2f}%")
         print(f"Land area ratio (Northern/Southern): {land_area_ratio:.2f}")
     elif source == "PANALESIS":
-        panalesis_maps = get_panalesis_maps("v1")
+        panalesis_maps = get_panalesis_maps(version)
         ages = []
         southern_land_areas = []
         northern_land_areas = []
@@ -126,6 +126,9 @@ def process_hemispheres_area(source):
             print(f"Southern land area: {southern_land_area:.2e} m²")
             print(f"Percentage of southern land: {southern_percentage:.2f}%")
             print(f"Land area ratio (Northern/Southern): {land_area_ratio:.2f}")
+        combined = list(zip(ages, northern_land_areas, southern_land_areas))
+        combined.sort(key=lambda x: x[0])
+        ages, northern_land_areas, southern_land_areas = zip(*combined)
         plot_timeseries_double(
             ages,
             northern_land_areas, 'Northern Land Area (m²)',
@@ -137,7 +140,8 @@ def process_hemispheres_area(source):
 
 if __name__ == "__main__":
     source = "PANALESIS"
-    process_hemispheres_area(source)
+    version = "v1"
+    process_hemispheres_area(source, version)
 
 
 
