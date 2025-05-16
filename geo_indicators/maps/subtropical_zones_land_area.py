@@ -1,14 +1,16 @@
 import os
 import numpy as np
 from rasterio.features import rasterize
-from geo_indicators.visualization import plot_mask
+from geo_indicators.visualization import plot_mask, plot_timeseries_simple
 from geo_indicators.utils import (
     load_tiff,
     reproject_raster,
     get_input_raster_path,
     get_reprojected_raster_path,
     get_reproj_latitudes_bounds_path,
-    load_reproj_latitudes_bounds
+    load_reproj_latitudes_bounds,
+    get_panalesis_maps,
+    get_panalesis_age
 )
 
 def get_subtropical_mask(raster_meta, raster_shape):
@@ -57,27 +59,13 @@ def get_subtropical_mask(raster_meta, raster_shape):
     return subtropical_mask
 
 
-def process_subtropical_area():
+def get_subtropical_area(data, metadata, transform, plot=False):
     """
     Process the input raster to calculate total and subtropical land areas after reprojection.
 
     Returns:
     - tuple: (land area m², total area m², subtropical land area m²)
     """
-    input_raster = get_input_raster_path()
-    reprojected_raster = get_reprojected_raster_path()
-
-    # Check if the reprojected raster already exists
-    if os.path.exists(reprojected_raster):
-        # Load the reprojected raster data
-        data, metadata = load_tiff(reprojected_raster)
-    else:
-        # Reproject the raster before processing
-        reproject_raster(input_raster, reprojected_raster)
-        # Load the reprojected raster data
-        data, metadata = load_tiff(reprojected_raster)
-    transform = metadata['transform']
-
 
     pixel_area = abs(transform[0] * transform[4])  # pixel width × height in meters
     elevation = data[0]
@@ -90,7 +78,8 @@ def process_subtropical_area():
 
     # Combined mask: land AND within subtropical regions
     combined_mask = np.logical_and(land_mask, subtropical_mask)
-    plot_mask(combined_mask,"Subtropical Land (23.5° < Latitude > 40° N/S)")
+    if plot == True:
+        plot_mask(combined_mask,"Subtropical Land (23.5° < Latitude > 40° N/S)")
 
 
     # Area calculations
@@ -99,9 +88,41 @@ def process_subtropical_area():
 
     return total_area, subtropical_land_area
 
+def process_subtropical_land_area(source):
+    if source == "ETOPO":
+        input_raster = get_input_raster_path()
+        reprojected_raster = get_reprojected_raster_path()
+        if os.path.exists(reprojected_raster):
+            data, metadata = load_tiff(reprojected_raster)
+        else:
+            reproject_raster(input_raster, reprojected_raster)
+            data, metadata = load_tiff(reprojected_raster)
+        transform = metadata['transform']
+        total_area, subtropical_land_area = get_subtropical_area(data,metadata,transform, plot=True)
+        subtropical_percentage = subtropical_land_area / total_area * 100
+        print(f"Total raster area: {total_area:.2e} m²")
+        print(f"Subtropical land area: {subtropical_land_area:.2e} m²")
+        print(f"Percentage of subtropical land: {subtropical_percentage:.2f}%")
+    elif source == "PANALESIS":
+        panalesis_maps = get_panalesis_maps("v1")
+        ages = []
+        subtropical_land_areas = []
+        for map in panalesis_maps:
+            age = get_panalesis_age(map)
+            ages.append(age)
+            data, metadata = load_tiff(map)
+            transform = metadata['transform']
+            total_area, subtropical_land_area = get_subtropical_area(data, metadata, transform,plot=False)
+            subtropical_land_areas.append(subtropical_land_area)
+            subtropical_percentage = subtropical_land_area / total_area * 100
+            print(map)
+            print(f"Total raster area: {total_area:.2e} m²")
+            print(f"Subtropical land area: {subtropical_land_area:.2e} m²")
+            print(f"Percentage of subtropical land: {subtropical_percentage:.2f}%")
+        plot_timeseries_simple(ages, subtropical_land_areas, 'Subtropical Land Area (m²)', 'Subtropical Land Area vs Age')
+    else:
+        print(f"Incorrect source value, must be either PANALESIS or ETOPO")
+
 if __name__ == "__main__":
-    total_area, subtropical_land_area = process_subtropical_area()
-    subtropical_percentage = subtropical_land_area / total_area * 100
-    print(f"Total raster area: {total_area:.2e} m²")
-    print(f"Subtropical land area: {subtropical_land_area:.2e} m²")
-    print(f"Percentage of subtropical land: {subtropical_percentage:.2f}%")
+   source = "PANALESIS"
+   process_subtropical_land_area(source)

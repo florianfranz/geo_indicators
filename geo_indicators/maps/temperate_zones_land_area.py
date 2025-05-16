@@ -1,14 +1,16 @@
 import os
 import numpy as np
 from rasterio.features import rasterize
-from geo_indicators.visualization import plot_mask
+from geo_indicators.visualization import plot_mask, plot_timeseries_simple
 from geo_indicators.utils import (
     load_tiff,
     reproject_raster,
     get_input_raster_path,
     get_reprojected_raster_path,
     get_reproj_latitudes_bounds_path,
-    load_reproj_latitudes_bounds
+    load_reproj_latitudes_bounds,
+    get_panalesis_maps,
+    get_panalesis_age
 )
 
 
@@ -58,27 +60,13 @@ def get_temperate_mask(raster_meta, raster_shape):
     return temperate_mask
 
 
-def process_temperate_area():
+def get_temperate_area(data, metadata, transform, plot=False):
     """
     Process the input raster to calculate total and temperate land areas after reprojection.
 
     Returns:
     - tuple: (land area m², total area m², temperate land area m²)
     """
-    input_raster = get_input_raster_path()
-    reprojected_raster = get_reprojected_raster_path()
-
-    # Check if the reprojected raster already exists
-    if os.path.exists(reprojected_raster):
-        # Load the reprojected raster data
-        data, metadata = load_tiff(reprojected_raster)
-    else:
-        # Reproject the raster before processing
-        reproject_raster(input_raster, reprojected_raster)
-        # Load the reprojected raster data
-        data, metadata = load_tiff(reprojected_raster)
-    transform = metadata['transform']
-
 
     pixel_area = abs(transform[0] * transform[4])  # pixel width × height in meters
     elevation = data[0]
@@ -88,21 +76,59 @@ def process_temperate_area():
 
     # Get temperate region mask
     temperate_mask = get_temperate_mask(metadata, elevation.shape)
+
     # Combined mask: land AND within temperate regions
     combined_mask = np.logical_and(land_mask, temperate_mask)
-    plot_mask(combined_mask, "Temperate Land ( 40° < Latitude > 60° N/S)")
+    if plot == True:
+        plot_mask(combined_mask, "Temperate Land (23.5° < Latitude > 40° N/S)")
+
     # Area calculations
     total_area = elevation.size * pixel_area
     temperate_land_area = np.sum(combined_mask) * pixel_area
 
     return total_area, temperate_land_area
 
+
+def process_temperate_land_area(source):
+    if source == "ETOPO":
+        input_raster = get_input_raster_path()
+        reprojected_raster = get_reprojected_raster_path()
+        if os.path.exists(reprojected_raster):
+            data, metadata = load_tiff(reprojected_raster)
+        else:
+            reproject_raster(input_raster, reprojected_raster)
+            data, metadata = load_tiff(reprojected_raster)
+        transform = metadata['transform']
+        total_area, temperate_land_area = get_temperate_area(data, metadata, transform, plot=True)
+        temperate_percentage = temperate_land_area / total_area * 100
+        print(f"Total raster area: {total_area:.2e} m²")
+        print(f"Temperate land area: {temperate_land_area:.2e} m²")
+        print(f"Percentage of temperate land: {temperate_percentage:.2f}%")
+    elif source == "PANALESIS":
+        panalesis_maps = get_panalesis_maps("v1")
+        ages = []
+        temperate_land_areas = []
+        for map in panalesis_maps:
+            age = get_panalesis_age(map)
+            ages.append(age)
+            data, metadata = load_tiff(map)
+            transform = metadata['transform']
+            total_area, temperate_land_area = get_temperate_area(data, metadata, transform, plot=False)
+            temperate_land_areas.append(temperate_land_area)
+            temperate_percentage = temperate_land_area / total_area * 100
+            print(map)
+            print(f"Total raster area: {total_area:.2e} m²")
+            print(f"temperate land area: {temperate_land_area:.2e} m²")
+            print(f"Percentage of temperate land: {temperate_percentage:.2f}%")
+        plot_timeseries_simple(ages, temperate_land_areas, 'Temperate Land Area (m²)',
+                               'Temperate Land Area vs Age')
+    else:
+        print(f"Incorrect source value, must be either PANALESIS or ETOPO")
+
 if __name__ == "__main__":
-    total_area, temperate_land_area = process_temperate_area()
-    temperate_percentage = temperate_land_area / total_area * 100
-    print(f"Total raster area: {total_area:.2e} m²")
-    print(f"Temperate land area: {temperate_land_area:.2e} m²")
-    print(f"Percentage of temperate land: {temperate_percentage:.2f}%")
+    source = "PANALESIS"
+    process_temperate_land_area(source)
+
 
 
 

@@ -1,14 +1,16 @@
 import os
 import numpy as np
 from rasterio.features import rasterize
-from geo_indicators.visualization import plot_mask
+from geo_indicators.visualization import plot_mask, plot_timeseries_simple
 from geo_indicators.utils import (
     load_tiff,
     reproject_raster,
     get_input_raster_path,
     get_reprojected_raster_path,
     get_reproj_latitudes_bounds_path,
-    load_reproj_latitudes_bounds
+    load_reproj_latitudes_bounds,
+    get_panalesis_maps,
+    get_panalesis_age
 )
 
 
@@ -53,26 +55,14 @@ def get_polar_mask(raster_meta, raster_shape):
 
     return polar_mask
 
-def process_polar_area():
+def get_polar_area(data, metadata, transform, plot=False):
     """
     Process the input raster to calculate total and polar land areas after reprojection.
 
     Returns:
     - tuple: (land area m², total area m², polar land area m²)
     """
-    input_raster = get_input_raster_path()
-    reprojected_raster = get_reprojected_raster_path()
 
-    # Check if the reprojected raster already exists
-    if os.path.exists(reprojected_raster):
-        # Load the reprojected raster data
-        data, metadata = load_tiff(reprojected_raster)
-    else:
-        # Reproject the raster before processing
-        reproject_raster(input_raster, reprojected_raster)
-        # Load the reprojected raster data
-        data, metadata = load_tiff(reprojected_raster)
-    transform = metadata['transform']
 
     pixel_area = abs(transform[0] * transform[4])  # pixel width × height in meters
     elevation = data[0]
@@ -85,7 +75,8 @@ def process_polar_area():
 
     # Combined mask: land AND within polar regions
     combined_mask = np.logical_and(land_mask, polar_mask)
-    plot_mask(combined_mask, "Polar Land (Latitude > 60° N/S)")
+    if plot == True:
+        plot_mask(combined_mask, "Polar Land (Latitude > 60° N/S)")
 
     # Area calculations
     total_area = elevation.size * pixel_area
@@ -93,13 +84,47 @@ def process_polar_area():
 
     return total_area, polar_land_area
 
-if __name__ == "__main__":
-    total_area, polar_land_area = process_polar_area()
-    polar_percentage = polar_land_area / total_area * 100
+def process_polar_land_area(source):
+    if source == "ETOPO":
+        input_raster = get_input_raster_path()
+        reprojected_raster = get_reprojected_raster_path()
+        if os.path.exists(reprojected_raster):
+            data, metadata = load_tiff(reprojected_raster)
+        else:
+            reproject_raster(input_raster, reprojected_raster)
+            data, metadata = load_tiff(reprojected_raster)
+        transform = metadata['transform']
+        total_area, polar_land_area = get_polar_area(data,metadata,transform, plot=True)
+        polar_percentage = polar_land_area / total_area * 100
+        print(f"Total raster area: {total_area:.2e} m²")
+        print(f"Polar land area: {polar_land_area:.2e} m²")
+        print(f"Percentage of polar land: {polar_percentage:.2f}%")
+    elif source == "PANALESIS":
+        panalesis_maps = get_panalesis_maps("v1")
+        ages = []
+        polar_land_areas = []
+        for map in panalesis_maps:
+            age = get_panalesis_age(map)
+            ages.append(age)
+            data, metadata = load_tiff(map)
+            transform = metadata['transform']
+            total_area, polar_land_area = get_polar_area(data, metadata, transform,plot=False)
+            polar_land_areas.append(polar_land_area)
+            polar_percentage = polar_land_area / total_area * 100
+            print(map)
+            print(f"Total raster area: {total_area:.2e} m²")
+            print(f"Polar land area: {polar_land_area:.2e} m²")
+            print(f"Percentage of polar land: {polar_percentage:.2f}%")
+        plot_timeseries_simple(ages, polar_land_areas, 'Polar Land Area (m²)', 'Polar Land Area vs Age')
+    else:
+        print(f"Incorrect source value, must be either PANALESIS or ETOPO")
 
-    print(f"Total raster area: {total_area:.2e} m²")
-    print(f"Polar land area: {polar_land_area:.2e} m²")
-    print(f"Percentage of polar land: {polar_percentage:.2f}%")
+if __name__ == "__main__":
+    source = "PANALESIS"
+    process_polar_land_area(source)
+
+
+
 
 
 

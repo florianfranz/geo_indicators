@@ -5,7 +5,6 @@ from pyproj import CRS
 import geopandas as gpd
 
 
-
 def get_input_raster_path():
     """
     Get the absolute path of the input raster file (inside the data folder)
@@ -83,3 +82,35 @@ def reproject_raster(input_raster, output_raster, target_crs="ESRI:54034"):
                     dst_crs=target_proj,
                     resampling=Resampling.nearest
                 )
+
+
+def get_panalesis_maps(version):
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(project_root, 'data')
+    version_dir = os.path.join(data_dir, f'pan_{version}')
+
+    # List all files in the directory and filter for .tif files
+    tif_files = [
+        os.path.join(version_dir, f)
+        for f in os.listdir(version_dir)
+        if os.path.isfile(os.path.join(version_dir, f)) and f.lower().endswith('.tif')
+    ]
+
+    return tif_files
+
+
+def get_panalesis_age(file_path):
+    # Extract the filename from the path
+    filename = os.path.basename(file_path)
+
+    # Remove the extension
+    name_without_ext = os.path.splitext(filename)[0]
+
+    # Split by underscores and get the last part
+    last_part = name_without_ext.split('_')[-1]
+
+    try:
+        age = int(last_part)
+        return age
+    except ValueError:
+        raise ValueError(f"Filename does not end with a numeric age: {filename}")
