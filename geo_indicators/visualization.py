@@ -43,3 +43,16 @@ def plot_timeseries_simple(ages, metric, metric_name, title):
     plt.grid(True)
     plt.tight_layout()
     plt.show()
+
+def plot_timeseries_double(ages, metric1, metric1_name, metric2, metric2_name, title):
+    plt.figure(figsize=(10, 6))
+    plt.plot(ages, metric1, marker='o', linestyle='-', color='blue', label=metric1_name)
+    plt.plot(ages, metric2, marker='o', linestyle='-', color='red', label=metric2_name)
+    plt.xlabel('Age (Ma)')
+    plt.ylabel('Area (m²)')
+    plt.title(title)
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+

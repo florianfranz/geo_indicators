@@ -8,9 +8,11 @@ from geo_indicators.utils import (
     get_input_raster_path,
     get_reprojected_raster_path,
     get_reproj_latitudes_bounds_path,
-    load_reproj_latitudes_bounds
+    load_reproj_latitudes_bounds,
+    get_panalesis_maps,
+    get_panalesis_age
 )
-from geo_indicators.visualization import plot_mask
+from geo_indicators.visualization import plot_mask, plot_timeseries_double
 
 def get_hemispheres_mask(raster_meta, raster_shape):
     """
@@ -51,28 +53,13 @@ def get_hemispheres_mask(raster_meta, raster_shape):
 
     return northern_mask, southern_mask
 
-def process_hemispheres_area():
+def get_hemispheres_area(data,metadata,transform,plot=False):
     """
     Process the input raster to calculate both hemispheres land areas after reprojection.
 
     Returns:
     - tuple: (northern and southern hemispheres land area m²)
     """
-    input_raster = get_input_raster_path()
-    reprojected_raster = get_reprojected_raster_path()
-
-    # Check if the reprojected raster already exists
-    if os.path.exists(reprojected_raster):
-        # Load the reprojected raster data
-        data, metadata = load_tiff(reprojected_raster)
-    else:
-        # Reproject the raster before processing
-        reproject_raster(input_raster, reprojected_raster)
-        # Load the reprojected raster data
-        data, metadata = load_tiff(reprojected_raster)
-    transform = metadata['transform']
-
-
     pixel_area = abs(transform[0] * transform[4])  # pixel width × height in meters
     elevation = data[0]
 
@@ -84,9 +71,10 @@ def process_hemispheres_area():
 
     # Combined mask: land AND within polar regions
     land_northern_mask = np.logical_and(land_mask, northern_mask)
-    plot_mask(land_northern_mask, "Land Pixels in Northern Hemisphere")
     land_southern_mask = np.logical_and(land_mask, southern_mask)
-    plot_mask(land_southern_mask, "Land Pixels in Southern Hemisphere")
+    if plot == True:
+        plot_mask(land_northern_mask, "Land Pixels in Northern Hemisphere")
+        plot_mask(land_southern_mask, "Land Pixels in Southern Hemisphere")
 
     # Area calculations
     total_area = elevation.size * pixel_area
@@ -95,19 +83,61 @@ def process_hemispheres_area():
 
     return total_area, northern_land_area,southern_land_area
 
+def process_hemispheres_area(source):
+    if source == "ETOPO":
+        input_raster = get_input_raster_path()
+        reprojected_raster = get_reprojected_raster_path()
+        if os.path.exists(reprojected_raster):
+            data, metadata = load_tiff(reprojected_raster)
+        else:
+            reproject_raster(input_raster, reprojected_raster)
+            data, metadata = load_tiff(reprojected_raster)
+        transform = metadata['transform']
+        total_area, northern_land_area, southern_land_area = get_hemispheres_area(data,metadata,transform, plot=True)
+        northern_percentage = northern_land_area / total_area * 100
+        southern_percentage = southern_land_area / total_area * 100
+        land_area_ratio = northern_land_area / southern_land_area
+        print(f"Total raster area: {total_area:.2e} m²")
+        print(f"Northern land area: {northern_land_area:.2e} m²")
+        print(f"Percentage of northern land: {northern_percentage:.2f}%")
+        print(f"Southern land area: {southern_land_area:.2e} m²")
+        print(f"Percentage of southern land: {southern_percentage:.2f}%")
+        print(f"Land area ratio (Northern/Southern): {land_area_ratio:.2f}")
+    elif source == "PANALESIS":
+        panalesis_maps = get_panalesis_maps("v1")
+        ages = []
+        southern_land_areas = []
+        northern_land_areas = []
+        for map in panalesis_maps:
+            age = get_panalesis_age(map)
+            ages.append(age)
+            data, metadata = load_tiff(map)
+            transform = metadata['transform']
+            total_area, northern_land_area, southern_land_area = get_hemispheres_area(data, metadata, transform, plot=False)
+            northern_land_areas.append(northern_land_area)
+            southern_land_areas.append(southern_land_area)
+            northern_percentage = northern_land_area / total_area * 100
+            southern_percentage = southern_land_area / total_area * 100
+            land_area_ratio = northern_land_area / southern_land_area
+            print(map)
+            print(f"Total raster area: {total_area:.2e} m²")
+            print(f"Northern land area: {northern_land_area:.2e} m²")
+            print(f"Percentage of northern land: {northern_percentage:.2f}%")
+            print(f"Southern land area: {southern_land_area:.2e} m²")
+            print(f"Percentage of southern land: {southern_percentage:.2f}%")
+            print(f"Land area ratio (Northern/Southern): {land_area_ratio:.2f}")
+        plot_timeseries_double(
+            ages,
+            northern_land_areas, 'Northern Land Area (m²)',
+            southern_land_areas, 'Southern Land Area (m²)',
+            'Northern and Southern Land Area vs Age'
+        )
+    else:
+        print(f"Incorrect source value, must be either PANALESIS or ETOPO")
+
 if __name__ == "__main__":
-    total_area, northern_land_area,southern_land_area = process_hemispheres_area()
-    northern_percentage = northern_land_area / total_area * 100
-    southern_percentage = southern_land_area / total_area * 100
-    land_area_ratio = northern_land_area / southern_land_area
-
-
-    print(f"Total raster area: {total_area:.2e} m²")
-    print(f"Northern land area: {northern_land_area:.2e} m²")
-    print(f"Percentage of northern land: {northern_percentage:.2f}%")
-    print(f"Southern land area: {southern_land_area:.2e} m²")
-    print(f"Percentage of southern land: {southern_percentage:.2f}%")
-    print(f"Land area ratio (Northern/Southern): {land_area_ratio:.2f}")
+    source = "PANALESIS"
+    process_hemispheres_area(source)
 
 
 
