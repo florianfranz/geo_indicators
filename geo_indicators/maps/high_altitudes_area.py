@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pandas as pd
 from geo_indicators.visualization import plot_mask, plot_timeseries_simple
 from geo_indicators.utils import (
     load_tiff,
@@ -7,7 +8,9 @@ from geo_indicators.utils import (
     get_input_raster_path,
     get_reprojected_raster_path,
     get_panalesis_maps,
-    get_panalesis_age)
+    get_panalesis_age,
+    stat_out
+    )
 
 
 
@@ -32,7 +35,11 @@ def get_high_altitudes_area(data, transform, plot=False):
     return high_altitude_area, total_area
 
 def process_high_altitude_area(source,version):
+    ages = []
+    high_altitudes_areas = []
     if source == "ETOPO":
+        if version != "ETOPO_2022":
+            version = "ETOPO_2022"
         input_raster = get_input_raster_path()
         reprojected_raster = get_reprojected_raster_path()
         if os.path.exists(reprojected_raster):
@@ -41,15 +48,16 @@ def process_high_altitude_area(source,version):
             reproject_raster(input_raster, reprojected_raster)
             data, metadata = load_tiff(reprojected_raster)
         transform = metadata['transform']
+        age = 0
+        ages.append(age)
         high_altitude_area, total_area = get_high_altitudes_area(data,transform,plot=True)
         high_altitude_percentage = high_altitude_area / total_area * 100
+        high_altitudes_areas.append(high_altitude_area)
         print(f"Total high altitude area: {high_altitude_area:.2e} m²")
         print(f"Total raster area: {total_area:.2e} m²")
         print(f"Percentage of high altitude regions is {high_altitude_percentage}")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
-        ages = []
-        high_altitudes_areas = []
         for map in panalesis_maps:
             age = get_panalesis_age(map)
             ages.append(age)
@@ -69,10 +77,15 @@ def process_high_altitude_area(source,version):
                                'High Altitude Regions (z >=3000m)')
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
+    df = pd.DataFrame({
+        'Age': ages,
+        'High_Altitude_Area': high_altitudes_areas
+    })
+    stat_out(df, join_on='Age', version=version, source=source)
 
 
 if __name__ == "__main__":
-    source = "PANALESIS"
-    version = "v1"
+    source = "ETOPO"
+    version = "whatever"
     process_high_altitude_area(source,version)
 

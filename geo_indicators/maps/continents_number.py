@@ -1,7 +1,16 @@
 import os
+import pandas as pd
 from geo_indicators.visualization import plot_gdf_simple, plot_timeseries_simple
-from coastal_length import create_contours
-from geo_indicators.utils import load_tiff, reproject_raster, get_input_raster_path, get_reprojected_raster_path,get_panalesis_maps,get_panalesis_age
+from geo_indicators.maps.coastal_length import create_contours
+from geo_indicators.utils import (
+    load_tiff,
+    reproject_raster,
+    get_input_raster_path,
+    get_reprojected_raster_path,
+    get_panalesis_maps,
+    get_panalesis_age,
+    stat_out
+)
 
 
 def filter_large_polygons(gdf, min_area_m2):
@@ -20,7 +29,11 @@ def filter_large_polygons(gdf, min_area_m2):
 
 def process_continents_number(source,version):
     min_area_m2 = 7.5e12  # Approx. area of Australia in square meters
+    ages = []
+    continents_numbers = []
     if source == "ETOPO":
+        if version != "ETOPO_2022":
+            version = "ETOPO_2022"
         input_raster = get_input_raster_path()
         reprojected_raster = get_reprojected_raster_path()
         if os.path.exists(reprojected_raster):
@@ -29,14 +42,16 @@ def process_continents_number(source,version):
             reproject_raster(input_raster, reprojected_raster)
             data, metadata = load_tiff(reprojected_raster)
         transform = metadata['transform']
+        age = 0
+        ages.append(age)
         coastlines = create_contours(data,transform)
         large_polygons = filter_large_polygons(coastlines, min_area_m2)
+        continents = len(large_polygons)
+        continents_numbers.append(continents)
         plot_gdf_simple(large_polygons, "Continents")
         print(f"Number of continents: {len(large_polygons)}")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
-        ages = []
-        continents_numbers = []
         for map in panalesis_maps:
             age = get_panalesis_age(map)
             ages.append(age)
@@ -50,11 +65,18 @@ def process_continents_number(source,version):
         combined.sort(key=lambda x: x[0])
         ages, continents_numbers = zip(*combined)
         plot_timeseries_simple(ages, continents_numbers, "Number of Continents", "Number of Continents vs Age")
+    else:
+        print(f"Incorrect source value, must be either PANALESIS or ETOPO")
+    df = pd.DataFrame({
+        'Age': ages,
+        'Continents_Number': continents_numbers
+    })
+    stat_out(df, join_on='Age', version=version, source=source)
 
 
 if __name__ == "__main__":
-    source = "PANALESIS"
-    version = "v0"
+    source = "ETOPO"
+    version = "v1"
     process_continents_number(source, version)
 
 

@@ -1,6 +1,15 @@
 import os
 import numpy as np
-from geo_indicators.utils import load_tiff, reproject_raster, get_input_raster_path, get_reprojected_raster_path, get_panalesis_maps, get_panalesis_age
+import pandas as pd
+from geo_indicators.utils import (
+    load_tiff,
+    reproject_raster,
+    get_input_raster_path,
+    get_reprojected_raster_path,
+    get_panalesis_maps,
+    get_panalesis_age,
+    stat_out
+    )
 from geo_indicators.visualization import plot_timeseries_simple
 
 
@@ -28,7 +37,12 @@ def oceans_area_volume(data, transform):
 
 
 def process_area_volume(source, version):
+    ages = []
+    areas = []
+    volumes = []
     if source == "ETOPO":
+        if version != "ETOPO_2022":
+            version = "ETOPO_2022"
         input_raster = get_input_raster_path()
         reprojected_raster = get_reprojected_raster_path()
         if os.path.exists(reprojected_raster):
@@ -37,14 +51,15 @@ def process_area_volume(source, version):
             reproject_raster(input_raster, reprojected_raster)
             data, metadata = load_tiff(reprojected_raster)
         transform = metadata['transform']
+        age = 0
+        ages.append(age)
         area, volume = oceans_area_volume(data[0], transform)
+        areas.append(area)
+        volumes.append(volume)
         print(f"Area below sea level: {area:.2e} m²")
         print(f"Volume below sea level: {volume:.2e} m³")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
-        ages = []
-        areas = []
-        volumes = []
         for map in panalesis_maps:
             age = get_panalesis_age(map)
             ages.append(age)
@@ -63,9 +78,15 @@ def process_area_volume(source, version):
         plot_timeseries_simple(ages,volumes, "Oceanic Volume (m³)", "Oceanic Volume vs Age")
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
+    df = pd.DataFrame({
+        'Age': ages,
+        'Ocean_Area': areas,
+        'Ocean_Volume': volumes
+    })
+    stat_out(df, join_on='Age', version=version, source=source)
 
 
 if __name__ == "__main__":
-    source = "PANALESIS"
-    version = "v0"
+    source = "ETOPO"
+    version = "v1"
     process_area_volume(source,version)

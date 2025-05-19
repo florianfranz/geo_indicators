@@ -3,6 +3,7 @@ import rasterio
 from rasterio.warp import reproject, calculate_default_transform, Resampling
 from pyproj import CRS
 import geopandas as gpd
+import pandas as pd
 
 
 def get_input_raster_path():
@@ -114,3 +115,37 @@ def get_panalesis_age(file_path):
         return age
     except ValueError:
         raise ValueError(f"Filename does not end with a numeric age: {filename}")
+
+def get_output_csv_path(source,version):
+    """
+    Get the absolute path to the reprojected raster (that will be saved inside the 'data' folder).
+    """
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(project_root, 'data')
+    out_dir = os.path.join(data_dir, 'output')
+    if source == "PANALESIS":
+        out_csv = os.path.join(out_dir, f"stats_PANALESIS_{version}.csv")
+    else:
+        out_csv = os.path.join(out_dir, f'stats_{version}.csv')
+    return out_csv
+
+def stat_out(df, join_on,version,source):
+    """
+    Appends or creates a CSV file with new statistical data merged on a common key.
+
+    Parameters:
+    - df (pd.DataFrame): DataFrame containing the new data.
+    - join_on (str): Column name to use as the join key (e.g., 'Age').
+    """
+    out_csv = get_output_csv_path(source,version)
+
+    if os.path.exists(out_csv):
+        existing_df = pd.read_csv(out_csv)
+        updated_df = pd.merge(existing_df, df, on=join_on, how='left')
+        updated_df.sort_values(by=join_on, inplace=True)
+        updated_df.to_csv(out_csv, index=False)
+        print(f"Updated existing CSV at: {out_csv}")
+    else:
+        df.to_csv(out_csv, index=False)
+        print(f"Created new CSV at: {out_csv}")
+

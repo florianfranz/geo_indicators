@@ -1,7 +1,7 @@
 import os
 import numpy as np
+import pandas as pd
 from rasterio.features import rasterize
-
 from geo_indicators.utils import (
     load_tiff,
     reproject_raster,
@@ -10,7 +10,8 @@ from geo_indicators.utils import (
     get_reproj_latitudes_bounds_path,
     load_reproj_latitudes_bounds,
     get_panalesis_maps,
-    get_panalesis_age
+    get_panalesis_age,
+    stat_out
 )
 from geo_indicators.visualization import plot_mask, plot_timeseries_double
 
@@ -84,7 +85,12 @@ def get_hemispheres_area(data,metadata,transform,plot=False):
     return total_area, northern_land_area,southern_land_area
 
 def process_hemispheres_area(source,version):
+    ages = []
+    southern_land_areas = []
+    northern_land_areas = []
     if source == "ETOPO":
+        if version != "ETOPO_2022":
+            version = "ETOPO_2022"
         input_raster = get_input_raster_path()
         reprojected_raster = get_reprojected_raster_path()
         if os.path.exists(reprojected_raster):
@@ -93,7 +99,11 @@ def process_hemispheres_area(source,version):
             reproject_raster(input_raster, reprojected_raster)
             data, metadata = load_tiff(reprojected_raster)
         transform = metadata['transform']
+        age = 0
+        ages.append(age)
         total_area, northern_land_area, southern_land_area = get_hemispheres_area(data,metadata,transform, plot=True)
+        northern_land_areas.append(northern_land_area)
+        southern_land_areas.append(southern_land_area)
         northern_percentage = northern_land_area / total_area * 100
         southern_percentage = southern_land_area / total_area * 100
         land_area_ratio = northern_land_area / southern_land_area
@@ -105,9 +115,6 @@ def process_hemispheres_area(source,version):
         print(f"Land area ratio (Northern/Southern): {land_area_ratio:.2f}")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
-        ages = []
-        southern_land_areas = []
-        northern_land_areas = []
         for map in panalesis_maps:
             age = get_panalesis_age(map)
             ages.append(age)
@@ -137,9 +144,15 @@ def process_hemispheres_area(source,version):
         )
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
+    df = pd.DataFrame({
+        'Age': ages,
+        'Northern_Land_Area': northern_land_areas,
+        'Southern_Land_Area': southern_land_areas
+    })
+    stat_out(df, join_on='Age', version=version, source=source)
 
 if __name__ == "__main__":
-    source = "PANALESIS"
+    source = "ETOPO"
     version = "v1"
     process_hemispheres_area(source, version)
 

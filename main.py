@@ -1,7 +1,9 @@
 # main.py
 
-from geo_indicators import maps, models, utils, visualization
+from geo_indicators.stats import generate_stats
 
 if __name__ == "__main__":
-    print("geo_indicators package structure is set up.")
-    print("Modules imported successfully.")
+    source = "PANALESIS"
+    version = "v0"
+    generate_stats(source,version)
+

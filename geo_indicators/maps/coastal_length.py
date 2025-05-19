@@ -1,10 +1,19 @@
 import os
 from skimage import measure
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon
+import pandas as pd
 import geopandas as gpd
-
 from geo_indicators.visualization import plot_gdf_simple, plot_timeseries_simple
-from geo_indicators.utils import load_tiff, reproject_raster, get_input_raster_path, get_reprojected_raster_path,get_panalesis_maps,get_panalesis_age
+from geo_indicators.utils import (
+    load_tiff,
+    reproject_raster,
+    get_input_raster_path,
+    get_reprojected_raster_path,
+    get_panalesis_maps,
+    get_panalesis_age,
+    stat_out
+)
+
 
 
 def close_contour(contour):
@@ -97,7 +106,11 @@ def get_total_length(gdf):
     return total_length
 
 def process_coastal_length(source,version):
+    ages = []
+    total_coastline_lengths = []
     if source == "ETOPO":
+        if version != "ETOPO_2022":
+            version = "ETOPO_2022"
         input_raster = get_input_raster_path()
         reprojected_raster = get_reprojected_raster_path()
         if os.path.exists(reprojected_raster):
@@ -106,15 +119,16 @@ def process_coastal_length(source,version):
             reproject_raster(input_raster, reprojected_raster)
             data, metadata = load_tiff(reprojected_raster)
         transform = metadata['transform']
+        age = 0
+        ages.append(age)
         coastlines = create_contours(data,transform)
         plot_gdf_simple(coastlines, "Coastlines")
         total_coastline_length = get_total_length(coastlines)
+        total_coastline_lengths.append(total_coastline_length)
         print(f"Total coastline length is {total_coastline_length} m")
-
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
-        ages = []
-        total_coastline_lengths = []
+
         for map in panalesis_maps:
             age = get_panalesis_age(map)
             ages.append(age)
@@ -126,12 +140,16 @@ def process_coastal_length(source,version):
         combined = list(zip(ages, total_coastline_lengths))
         combined.sort(key=lambda x: x[0])
         ages, total_coastline_lengths = zip(*combined)
-        plot_timeseries_simple(ages, total_coastline_lengths, "Total Coastal Length (m)", "Coastal Length vs Age")
 
+        plot_timeseries_simple(ages, total_coastline_lengths, "Total Coastal Length (m)", "Coastal Length vs Age")
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
-
+    df = pd.DataFrame({
+        'Age': ages,
+        'Coastline_length': total_coastline_lengths
+    })
+    stat_out(df, join_on='Age', version=version, source=source)
 if __name__ == "__main__":
-    source = "PANALESIS"
-    version = "v0"
+    source = "ETOPO"
+    version = "v1"
     process_coastal_length(source,version)

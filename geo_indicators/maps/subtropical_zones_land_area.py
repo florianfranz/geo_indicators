@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pandas as pd
 from rasterio.features import rasterize
 from geo_indicators.visualization import plot_mask, plot_timeseries_simple
 from geo_indicators.utils import (
@@ -10,7 +11,8 @@ from geo_indicators.utils import (
     get_reproj_latitudes_bounds_path,
     load_reproj_latitudes_bounds,
     get_panalesis_maps,
-    get_panalesis_age
+    get_panalesis_age,
+    stat_out
 )
 
 def get_subtropical_mask(raster_meta, raster_shape):
@@ -89,7 +91,11 @@ def get_subtropical_area(data, metadata, transform, plot=False):
     return total_area, subtropical_land_area
 
 def process_subtropical_land_area(source,version):
+    ages = []
+    subtropical_land_areas = []
     if source == "ETOPO":
+        if version != "ETOPO_2022":
+            version = "ETOPO_2022"
         input_raster = get_input_raster_path()
         reprojected_raster = get_reprojected_raster_path()
         if os.path.exists(reprojected_raster):
@@ -98,15 +104,16 @@ def process_subtropical_land_area(source,version):
             reproject_raster(input_raster, reprojected_raster)
             data, metadata = load_tiff(reprojected_raster)
         transform = metadata['transform']
+        age = 0
+        ages.append(age)
         total_area, subtropical_land_area = get_subtropical_area(data,metadata,transform, plot=True)
         subtropical_percentage = subtropical_land_area / total_area * 100
+        subtropical_land_areas.append(subtropical_land_area)
         print(f"Total raster area: {total_area:.2e} m²")
         print(f"Subtropical land area: {subtropical_land_area:.2e} m²")
         print(f"Percentage of subtropical land: {subtropical_percentage:.2f}%")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
-        ages = []
-        subtropical_land_areas = []
         for map in panalesis_maps:
             age = get_panalesis_age(map)
             ages.append(age)
@@ -125,8 +132,13 @@ def process_subtropical_land_area(source,version):
         plot_timeseries_simple(ages, subtropical_land_areas, 'Subtropical Land Area (m²)', 'Subtropical Land Area vs Age')
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
+    df = pd.DataFrame({
+        'Age': ages,
+        'Subtropical_Land_Area': subtropical_land_areas
+    })
+    stat_out(df, join_on='Age', version=version, source=source)
 
 if __name__ == "__main__":
-   source = "PANALESIS"
+   source = "ETOPO"
    version = "v1"
    process_subtropical_land_area(source,version)

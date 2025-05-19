@@ -1,6 +1,15 @@
 import os
 import numpy as np
-from geo_indicators.utils import load_tiff, reproject_raster, get_input_raster_path, get_reprojected_raster_path, get_panalesis_maps, get_panalesis_age
+import pandas as pd
+from geo_indicators.utils import (
+    load_tiff,
+    reproject_raster,
+    get_input_raster_path,
+    get_reprojected_raster_path,
+    get_panalesis_maps,
+    get_panalesis_age,
+    stat_out
+)
 from geo_indicators.visualization import plot_mask, plot_timeseries_simple
 
 
@@ -24,7 +33,11 @@ def get_shelves_area(data, transform, plot=False):
     return shelves_area, total_area
 
 def process_shelves_area(source,version):
+    ages = []
+    shelves_areas = []
     if source == "ETOPO":
+        if version != "ETOPO_2022":
+            version = "ETOPO_2022"
         input_raster = get_input_raster_path()
         reprojected_raster = get_reprojected_raster_path()
         if os.path.exists(reprojected_raster):
@@ -33,15 +46,16 @@ def process_shelves_area(source,version):
             reproject_raster(input_raster, reprojected_raster)
             data, metadata = load_tiff(reprojected_raster)
         transform = metadata['transform']
+        age = 0
+        ages.append(age)
         shelves_area, total_area = get_shelves_area(data, transform, plot=True)
+        shelves_areas.append(shelves_area)
         shelves_percentage = shelves_area/total_area*100
         print(f"Total shelves area: {shelves_area:.2e} m²")
         print(f"Total raster area: {total_area:.2e} m²")
         print(f"Percentage of shelves is {shelves_percentage}")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
-        ages = []
-        shelves_areas = []
         for map in panalesis_maps:
             age = get_panalesis_age(map)
             ages.append(age)
@@ -61,8 +75,14 @@ def process_shelves_area(source,version):
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
 
+    df = pd.DataFrame({
+        'Age': ages,
+        'Continental_Shelves_Area': shelves_areas
+    })
+    stat_out(df, join_on='Age', version=version, source=source)
+
 
 if __name__ == "__main__":
-    source = "PANALESIS"
+    source = "ETOPO"
     version = "v1"
     process_shelves_area(source,version)
