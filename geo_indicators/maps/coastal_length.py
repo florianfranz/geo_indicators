@@ -1,9 +1,10 @@
+import os
 from skimage import measure
 from shapely.geometry import Polygon, Point
 import geopandas as gpd
 
-from geo_indicators.visualization import plot_gdf_simple
-from geo_indicators.utils import load_tiff, reproject_raster, get_input_raster_path, get_reprojected_raster_path
+from geo_indicators.visualization import plot_gdf_simple, plot_timeseries_simple
+from geo_indicators.utils import load_tiff, reproject_raster, get_input_raster_path, get_reprojected_raster_path,get_panalesis_maps,get_panalesis_age
 
 
 def close_contour(contour):
@@ -46,7 +47,7 @@ def close_contour(contour):
 
     return contour
 
-def create_contours():
+def create_contours(data,transform):
     """
         Process the input raster to create coastline contours.
 
@@ -54,15 +55,7 @@ def create_contours():
         -a geodataframe (gdf) with all contour features
         """
     # Dynamically get the paths for input and reprojected raster
-    input_raster = get_input_raster_path()
-    reprojected_raster = get_reprojected_raster_path()
 
-    # Reproject the raster before processing
-    reproject_raster(input_raster, reprojected_raster)
-
-    # Load the reprojected raster data
-    data, metadata = load_tiff(reprojected_raster)
-    transform = metadata['transform']
 
     polygons = []
     contours = measure.find_contours(data[0], 0)
@@ -84,7 +77,7 @@ def create_contours():
     return gdf
 
 
-def calculate_total_length(gdf):
+def get_total_length(gdf):
     """
     Calculates the total length of all features in the GeoDataFrame.
 
@@ -103,9 +96,42 @@ def calculate_total_length(gdf):
 
     return total_length
 
+def process_coastal_length(source,version):
+    if source == "ETOPO":
+        input_raster = get_input_raster_path()
+        reprojected_raster = get_reprojected_raster_path()
+        if os.path.exists(reprojected_raster):
+            data, metadata = load_tiff(reprojected_raster)
+        else:
+            reproject_raster(input_raster, reprojected_raster)
+            data, metadata = load_tiff(reprojected_raster)
+        transform = metadata['transform']
+        coastlines = create_contours(data,transform)
+        plot_gdf_simple(coastlines, "Coastlines")
+        total_coastline_length = get_total_length(coastlines)
+        print(f"Total coastline length is {total_coastline_length} m")
+
+    elif source == "PANALESIS":
+        panalesis_maps = get_panalesis_maps(version)
+        ages = []
+        total_coastline_lengths = []
+        for map in panalesis_maps:
+            age = get_panalesis_age(map)
+            ages.append(age)
+            data, metadata = load_tiff(map)
+            transform = metadata['transform']
+            coastlines = create_contours(data, transform)
+            total_coastline_length = get_total_length(coastlines)
+            total_coastline_lengths.append(total_coastline_length)
+        combined = list(zip(ages, total_coastline_lengths))
+        combined.sort(key=lambda x: x[0])
+        ages, total_coastline_lengths = zip(*combined)
+        plot_timeseries_simple(ages, total_coastline_lengths, "Total Coastal Length (m)", "Coastal Length vs Age")
+
+    else:
+        print(f"Incorrect source value, must be either PANALESIS or ETOPO")
 
 if __name__ == "__main__":
-    coastlines = create_contours()
-    plot_gdf_simple(coastlines, "Coastlines")
-    total_coastline_length = calculate_total_length(coastlines)
-    print(f"Total coastline length is {total_coastline_length} m")
+    source = "PANALESIS"
+    version = "v0"
+    process_coastal_length(source,version)
