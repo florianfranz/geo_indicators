@@ -105,7 +105,7 @@ def get_total_length(gdf):
 
     return total_length
 
-def process_coastal_length(source,version):
+def process_coastal_length(source,version,verbose=False):
     ages = []
     total_coastline_lengths = []
     if source == "ETOPO":
@@ -122,13 +122,14 @@ def process_coastal_length(source,version):
         age = 0
         ages.append(age)
         coastlines = create_contours(data,transform)
-        plot_gdf_simple(coastlines, "Coastlines")
+        if verbose:
+            plot_gdf_simple(coastlines, "Coastlines")
         total_coastline_length = get_total_length(coastlines)
         total_coastline_lengths.append(total_coastline_length)
-        print(f"Total coastline length is {total_coastline_length} m")
+        if verbose:
+            print(f"Total coastline length is {total_coastline_length} m")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
-
         for map in panalesis_maps:
             age = get_panalesis_age(map)
             ages.append(age)
@@ -140,8 +141,8 @@ def process_coastal_length(source,version):
         combined = list(zip(ages, total_coastline_lengths))
         combined.sort(key=lambda x: x[0])
         ages, total_coastline_lengths = zip(*combined)
-
-        plot_timeseries_simple(ages, total_coastline_lengths, "Total Coastal Length (m)", "Coastal Length vs Age")
+        if verbose:
+            plot_timeseries_simple(ages, total_coastline_lengths, "Total Coastal Length (m)", "Coastal Length vs Age")
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
     df = pd.DataFrame({
@@ -150,6 +151,6 @@ def process_coastal_length(source,version):
     })
     stat_out(df, join_on='Age', version=version, source=source)
 if __name__ == "__main__":
-    source = "ETOPO"
+    source = "PANALESIS"
     version = "v1"
     process_coastal_length(source,version)

@@ -34,7 +34,7 @@ def get_high_altitudes_area(data, transform, plot=False):
 
     return high_altitude_area, total_area
 
-def process_high_altitude_area(source,version):
+def process_high_altitude_area(source,version,verbose=False):
     ages = []
     high_altitudes_areas = []
     if source == "ETOPO":
@@ -50,12 +50,16 @@ def process_high_altitude_area(source,version):
         transform = metadata['transform']
         age = 0
         ages.append(age)
-        high_altitude_area, total_area = get_high_altitudes_area(data,transform,plot=True)
+        if verbose:
+            high_altitude_area, total_area = get_high_altitudes_area(data,transform,plot=True)
+        else:
+            high_altitude_area, total_area = get_high_altitudes_area(data, transform, plot=False)
         high_altitude_percentage = high_altitude_area / total_area * 100
         high_altitudes_areas.append(high_altitude_area)
-        print(f"Total high altitude area: {high_altitude_area:.2e} m²")
-        print(f"Total raster area: {total_area:.2e} m²")
-        print(f"Percentage of high altitude regions is {high_altitude_percentage}")
+        if verbose:
+            print(f"Total high altitude area: {high_altitude_area:.2e} m²")
+            print(f"Total raster area: {total_area:.2e} m²")
+            print(f"Percentage of high altitude regions is {high_altitude_percentage}")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
         for map in panalesis_maps:
@@ -66,15 +70,17 @@ def process_high_altitude_area(source,version):
             high_altitude_area, total_area = get_high_altitudes_area(data, transform, plot=False)
             high_altitudes_areas.append(high_altitude_area)
             high_altitude_percentage = high_altitude_area / total_area * 100
-            print(age)
-            print(f"Total high altitude area: {high_altitude_area:.2e} m²")
-            print(f"Total raster area: {total_area:.2e} m²")
-            print(f"Percentage of high altitude regions is {high_altitude_percentage}")
+            if verbose:
+                print(age)
+                print(f"Total high altitude area: {high_altitude_area:.2e} m²")
+                print(f"Total raster area: {total_area:.2e} m²")
+                print(f"Percentage of high altitude regions is {high_altitude_percentage}")
         combined = list(zip(ages, high_altitudes_areas))
         combined.sort(key=lambda x: x[0])
         ages, high_altitudes_areas = zip(*combined)
-        plot_timeseries_simple(ages, high_altitudes_areas, 'High Altitude Area (m²)',
-                               'High Altitude Regions (z >=3000m)')
+        if verbose:
+            plot_timeseries_simple(ages, high_altitudes_areas, 'High Altitude Area (m²)',
+                                   'High Altitude Regions (z >=3000m)')
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
     df = pd.DataFrame({
@@ -85,7 +91,7 @@ def process_high_altitude_area(source,version):
 
 
 if __name__ == "__main__":
-    source = "ETOPO"
+    source = "PANALESIS"
     version = "whatever"
     process_high_altitude_area(source,version)
 

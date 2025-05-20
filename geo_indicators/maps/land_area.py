@@ -32,7 +32,7 @@ def get_land_area(data,transform, plot=False):
 
     return land_area, total_area
 
-def process_land_area(source,version):
+def process_land_area(source,version,verbose=False):
     ages = []
     land_areas = []
     if source == "ETOPO":
@@ -48,12 +48,16 @@ def process_land_area(source,version):
         transform = metadata['transform']
         age = 0
         ages.append(age)
-        land_area, total_area = get_land_area(data,transform, plot=True)
+        if verbose:
+            land_area, total_area = get_land_area(data,transform, plot=True)
+        else:
+            land_area, total_area = get_land_area(data, transform, plot=False)
         land_percentage = land_area / total_area * 100
         land_areas.append(land_area)
-        print(f"Total land area: {land_area:.2e} m²")
-        print(f"Total raster area: {total_area:.2e} m²")
-        print(f"Percentage of land is {land_percentage}%")
+        if verbose:
+            print(f"Total land area: {land_area:.2e} m²")
+            print(f"Total raster area: {total_area:.2e} m²")
+            print(f"Percentage of land is {land_percentage}%")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
         for map in panalesis_maps:
@@ -64,14 +68,16 @@ def process_land_area(source,version):
             land_area, total_area = get_land_area(data, transform, plot=False)
             land_areas.append(land_area)
             land_percentage = land_area / total_area * 100
-            print(map)
-            print(f"Total land area: {land_area:.2e} m²")
-            print(f"Total raster area: {total_area:.2e} m²")
-            print(f"Percentage of land is {land_percentage}%")
+            if verbose:
+                print(map)
+                print(f"Total land area: {land_area:.2e} m²")
+                print(f"Total raster area: {total_area:.2e} m²")
+                print(f"Percentage of land is {land_percentage}%")
         combined = list(zip(ages, land_areas))
         combined.sort(key=lambda x: x[0])
         ages, land_areas = zip(*combined)
-        plot_timeseries_simple(ages, land_areas, 'Land Area (m²)', 'Land Area vs Age')
+        if verbose:
+            plot_timeseries_simple(ages, land_areas, 'Land Area (m²)', 'Land Area vs Age')
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
     df = pd.DataFrame({

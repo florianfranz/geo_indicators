@@ -32,7 +32,7 @@ def get_shelves_area(data, transform, plot=False):
 
     return shelves_area, total_area
 
-def process_shelves_area(source,version):
+def process_shelves_area(source,version,verbose=False):
     ages = []
     shelves_areas = []
     if source == "ETOPO":
@@ -48,12 +48,16 @@ def process_shelves_area(source,version):
         transform = metadata['transform']
         age = 0
         ages.append(age)
-        shelves_area, total_area = get_shelves_area(data, transform, plot=True)
+        if verbose:
+            shelves_area, total_area = get_shelves_area(data, transform, plot=True)
+        else:
+            shelves_area, total_area = get_shelves_area(data, transform, plot=False)
         shelves_areas.append(shelves_area)
         shelves_percentage = shelves_area/total_area*100
-        print(f"Total shelves area: {shelves_area:.2e} m²")
-        print(f"Total raster area: {total_area:.2e} m²")
-        print(f"Percentage of shelves is {shelves_percentage}")
+        if verbose:
+            print(f"Total shelves area: {shelves_area:.2e} m²")
+            print(f"Total raster area: {total_area:.2e} m²")
+            print(f"Percentage of shelves is {shelves_percentage}")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
         for map in panalesis_maps:
@@ -64,14 +68,16 @@ def process_shelves_area(source,version):
             shelves_area, total_area = get_shelves_area(data, transform, plot=False)
             shelves_areas.append(shelves_area)
             shelves_percentage = shelves_area / total_area * 100
-            print(map)
-            print(f"Total shelves area: {shelves_area:.2e} m²")
-            print(f"Total raster area: {total_area:.2e} m²")
-            print(f"Percentage of shelves is {shelves_percentage}")
+            if verbose:
+                print(map)
+                print(f"Total shelves area: {shelves_area:.2e} m²")
+                print(f"Total raster area: {total_area:.2e} m²")
+                print(f"Percentage of shelves is {shelves_percentage}")
         combined = list(zip(ages, shelves_areas))
         combined.sort(key=lambda x: x[0])
         ages, shelves_areas = zip(*combined)
-        plot_timeseries_simple(ages,shelves_areas, 'Shelves Area (m²)', 'Shelves Area vs Age')
+        if verbose:
+            plot_timeseries_simple(ages,shelves_areas, 'Shelves Area (m²)', 'Shelves Area vs Age')
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
 
@@ -83,6 +89,6 @@ def process_shelves_area(source,version):
 
 
 if __name__ == "__main__":
-    source = "ETOPO"
+    source = "PANALESIS"
     version = "v1"
     process_shelves_area(source,version)

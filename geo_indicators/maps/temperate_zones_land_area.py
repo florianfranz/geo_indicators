@@ -91,7 +91,7 @@ def get_temperate_area(data, metadata, transform, plot=False):
     return total_area, temperate_land_area
 
 
-def process_temperate_land_area(source,version):
+def process_temperate_land_area(source,version,verbose=False):
     ages = []
     temperate_land_areas = []
     if source == "ETOPO":
@@ -107,12 +107,16 @@ def process_temperate_land_area(source,version):
         transform = metadata['transform']
         age = 0
         ages.append(age)
-        total_area, temperate_land_area = get_temperate_area(data, metadata, transform, plot=True)
+        if verbose:
+            total_area, temperate_land_area = get_temperate_area(data, metadata, transform, plot=True)
+        else:
+            total_area, temperate_land_area = get_temperate_area(data, metadata, transform, plot=False)
         temperate_percentage = temperate_land_area / total_area * 100
         temperate_land_areas.append(temperate_land_area)
-        print(f"Total raster area: {total_area:.2e} m²")
-        print(f"Temperate land area: {temperate_land_area:.2e} m²")
-        print(f"Percentage of temperate land: {temperate_percentage:.2f}%")
+        if verbose:
+            print(f"Total raster area: {total_area:.2e} m²")
+            print(f"Temperate land area: {temperate_land_area:.2e} m²")
+            print(f"Percentage of temperate land: {temperate_percentage:.2f}%")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
         for map in panalesis_maps:
@@ -123,15 +127,17 @@ def process_temperate_land_area(source,version):
             total_area, temperate_land_area = get_temperate_area(data, metadata, transform, plot=False)
             temperate_land_areas.append(temperate_land_area)
             temperate_percentage = temperate_land_area / total_area * 100
-            print(map)
-            print(f"Total raster area: {total_area:.2e} m²")
-            print(f"temperate land area: {temperate_land_area:.2e} m²")
-            print(f"Percentage of temperate land: {temperate_percentage:.2f}%")
+            if verbose:
+                print(map)
+                print(f"Total raster area: {total_area:.2e} m²")
+                print(f"temperate land area: {temperate_land_area:.2e} m²")
+                print(f"Percentage of temperate land: {temperate_percentage:.2f}%")
         combined = list(zip(ages, temperate_land_areas))
         combined.sort(key=lambda x: x[0])
         ages, temperate_land_areas = zip(*combined)
-        plot_timeseries_simple(ages, temperate_land_areas, 'Temperate Land Area (m²)',
-                               'Temperate Land Area vs Age')
+        if verbose:
+            plot_timeseries_simple(ages, temperate_land_areas, 'Temperate Land Area (m²)',
+                                   'Temperate Land Area vs Age')
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
     df = pd.DataFrame({
@@ -141,7 +147,7 @@ def process_temperate_land_area(source,version):
     stat_out(df, join_on='Age', version=version, source=source)
 
 if __name__ == "__main__":
-    source = "ETOPO"
+    source = "PANALESIS"
     version = "v1"
     process_temperate_land_area(source,version)
 

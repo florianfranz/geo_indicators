@@ -144,8 +144,6 @@ def stat_out(df, join_on,version,source):
         updated_df = pd.merge(existing_df, df, on=join_on, how='left')
         updated_df.sort_values(by=join_on, inplace=True)
         updated_df.to_csv(out_csv, index=False)
-        print(f"Updated existing CSV at: {out_csv}")
     else:
         df.to_csv(out_csv, index=False)
-        print(f"Created new CSV at: {out_csv}")
 

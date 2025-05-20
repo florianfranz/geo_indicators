@@ -27,7 +27,7 @@ def filter_large_polygons(gdf, min_area_m2):
     filtered_gdf = gdf[gdf.geometry.area >= min_area_m2]
     return filtered_gdf
 
-def process_continents_number(source,version):
+def process_continents_number(source,version,verbose=False):
     min_area_m2 = 7.5e12  # Approx. area of Australia in square meters
     ages = []
     continents_numbers = []
@@ -48,8 +48,9 @@ def process_continents_number(source,version):
         large_polygons = filter_large_polygons(coastlines, min_area_m2)
         continents = len(large_polygons)
         continents_numbers.append(continents)
-        plot_gdf_simple(large_polygons, "Continents")
-        print(f"Number of continents: {len(large_polygons)}")
+        if verbose:
+            plot_gdf_simple(large_polygons, "Continents")
+            print(f"Number of continents: {len(large_polygons)}")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
         for map in panalesis_maps:
@@ -64,7 +65,8 @@ def process_continents_number(source,version):
         combined = list(zip(ages, continents_numbers))
         combined.sort(key=lambda x: x[0])
         ages, continents_numbers = zip(*combined)
-        plot_timeseries_simple(ages, continents_numbers, "Number of Continents", "Number of Continents vs Age")
+        if verbose:
+            plot_timeseries_simple(ages, continents_numbers, "Number of Continents", "Number of Continents vs Age")
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
     df = pd.DataFrame({
@@ -75,7 +77,7 @@ def process_continents_number(source,version):
 
 
 if __name__ == "__main__":
-    source = "ETOPO"
+    source = "PANALESIS"
     version = "v1"
     process_continents_number(source, version)
 

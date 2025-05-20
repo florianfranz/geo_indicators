@@ -36,7 +36,7 @@ def oceans_area_volume(data, transform):
     return area, volume
 
 
-def process_area_volume(source, version):
+def process_area_volume(source, version,verbose=False):
     ages = []
     areas = []
     volumes = []
@@ -56,8 +56,9 @@ def process_area_volume(source, version):
         area, volume = oceans_area_volume(data[0], transform)
         areas.append(area)
         volumes.append(volume)
-        print(f"Area below sea level: {area:.2e} m²")
-        print(f"Volume below sea level: {volume:.2e} m³")
+        if verbose:
+            print(f"Area below sea level: {area:.2e} m²")
+            print(f"Volume below sea level: {volume:.2e} m³")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
         for map in panalesis_maps:
@@ -68,14 +69,16 @@ def process_area_volume(source, version):
             area, volume = oceans_area_volume(data[0], transform)
             areas.append(area)
             volumes.append(volume)
-            print(map)
-            print(f"Area below sea level: {area:.2e} m²")
-            print(f"Volume below sea level: {volume:.2e} m³")
+            if verbose:
+                print(map)
+                print(f"Area below sea level: {area:.2e} m²")
+                print(f"Volume below sea level: {volume:.2e} m³")
         combined = list(zip(ages, areas, volumes))
         combined.sort(key=lambda x: x[0])
         ages, areas, volumes = zip(*combined)
-        plot_timeseries_simple(ages,areas, "Oceanic Area (m²)", "Oceanic Area vs Age")
-        plot_timeseries_simple(ages,volumes, "Oceanic Volume (m³)", "Oceanic Volume vs Age")
+        if verbose:
+            plot_timeseries_simple(ages,areas, "Oceanic Area (m²)", "Oceanic Area vs Age")
+            plot_timeseries_simple(ages,volumes, "Oceanic Volume (m³)", "Oceanic Volume vs Age")
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
     df = pd.DataFrame({
@@ -87,6 +90,6 @@ def process_area_volume(source, version):
 
 
 if __name__ == "__main__":
-    source = "ETOPO"
+    source = "PANALESIS"
     version = "v1"
     process_area_volume(source,version)

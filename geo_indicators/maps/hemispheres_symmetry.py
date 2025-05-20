@@ -84,7 +84,7 @@ def get_hemispheres_area(data,metadata,transform,plot=False):
 
     return total_area, northern_land_area,southern_land_area
 
-def process_hemispheres_area(source,version):
+def process_hemispheres_area(source,version,verbose=False):
     ages = []
     southern_land_areas = []
     northern_land_areas = []
@@ -101,18 +101,23 @@ def process_hemispheres_area(source,version):
         transform = metadata['transform']
         age = 0
         ages.append(age)
-        total_area, northern_land_area, southern_land_area = get_hemispheres_area(data,metadata,transform, plot=True)
+        if verbose:
+            total_area, northern_land_area, southern_land_area = get_hemispheres_area(data,metadata,transform, plot=True)
+        else:
+            total_area, northern_land_area, southern_land_area = get_hemispheres_area(data, metadata, transform,
+                                                                                      plot=False)
         northern_land_areas.append(northern_land_area)
         southern_land_areas.append(southern_land_area)
         northern_percentage = northern_land_area / total_area * 100
         southern_percentage = southern_land_area / total_area * 100
         land_area_ratio = northern_land_area / southern_land_area
-        print(f"Total raster area: {total_area:.2e} m²")
-        print(f"Northern land area: {northern_land_area:.2e} m²")
-        print(f"Percentage of northern land: {northern_percentage:.2f}%")
-        print(f"Southern land area: {southern_land_area:.2e} m²")
-        print(f"Percentage of southern land: {southern_percentage:.2f}%")
-        print(f"Land area ratio (Northern/Southern): {land_area_ratio:.2f}")
+        if verbose:
+            print(f"Total raster area: {total_area:.2e} m²")
+            print(f"Northern land area: {northern_land_area:.2e} m²")
+            print(f"Percentage of northern land: {northern_percentage:.2f}%")
+            print(f"Southern land area: {southern_land_area:.2e} m²")
+            print(f"Percentage of southern land: {southern_percentage:.2f}%")
+            print(f"Land area ratio (Northern/Southern): {land_area_ratio:.2f}")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
         for map in panalesis_maps:
@@ -126,22 +131,24 @@ def process_hemispheres_area(source,version):
             northern_percentage = northern_land_area / total_area * 100
             southern_percentage = southern_land_area / total_area * 100
             land_area_ratio = northern_land_area / southern_land_area
-            print(map)
-            print(f"Total raster area: {total_area:.2e} m²")
-            print(f"Northern land area: {northern_land_area:.2e} m²")
-            print(f"Percentage of northern land: {northern_percentage:.2f}%")
-            print(f"Southern land area: {southern_land_area:.2e} m²")
-            print(f"Percentage of southern land: {southern_percentage:.2f}%")
-            print(f"Land area ratio (Northern/Southern): {land_area_ratio:.2f}")
+            if verbose:
+                print(map)
+                print(f"Total raster area: {total_area:.2e} m²")
+                print(f"Northern land area: {northern_land_area:.2e} m²")
+                print(f"Percentage of northern land: {northern_percentage:.2f}%")
+                print(f"Southern land area: {southern_land_area:.2e} m²")
+                print(f"Percentage of southern land: {southern_percentage:.2f}%")
+                print(f"Land area ratio (Northern/Southern): {land_area_ratio:.2f}")
         combined = list(zip(ages, northern_land_areas, southern_land_areas))
         combined.sort(key=lambda x: x[0])
         ages, northern_land_areas, southern_land_areas = zip(*combined)
-        plot_timeseries_double(
-            ages,
-            northern_land_areas, 'Northern Land Area (m²)',
-            southern_land_areas, 'Southern Land Area (m²)',
-            'Northern and Southern Land Area vs Age'
-        )
+        if verbose:
+            plot_timeseries_double(
+                ages,
+                northern_land_areas, 'Northern Land Area (m²)',
+                southern_land_areas, 'Southern Land Area (m²)',
+                'Northern and Southern Land Area vs Age'
+            )
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
     df = pd.DataFrame({
@@ -152,7 +159,7 @@ def process_hemispheres_area(source,version):
     stat_out(df, join_on='Age', version=version, source=source)
 
 if __name__ == "__main__":
-    source = "ETOPO"
+    source = "PANALESIS"
     version = "v1"
     process_hemispheres_area(source, version)
 

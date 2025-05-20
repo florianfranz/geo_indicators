@@ -90,7 +90,7 @@ def get_subtropical_area(data, metadata, transform, plot=False):
 
     return total_area, subtropical_land_area
 
-def process_subtropical_land_area(source,version):
+def process_subtropical_land_area(source,version,verbose=False):
     ages = []
     subtropical_land_areas = []
     if source == "ETOPO":
@@ -106,12 +106,16 @@ def process_subtropical_land_area(source,version):
         transform = metadata['transform']
         age = 0
         ages.append(age)
-        total_area, subtropical_land_area = get_subtropical_area(data,metadata,transform, plot=True)
+        if verbose:
+            total_area, subtropical_land_area = get_subtropical_area(data,metadata,transform, plot=True)
+        else:
+            total_area, subtropical_land_area = get_subtropical_area(data,metadata,transform, plot=False)
         subtropical_percentage = subtropical_land_area / total_area * 100
         subtropical_land_areas.append(subtropical_land_area)
-        print(f"Total raster area: {total_area:.2e} m²")
-        print(f"Subtropical land area: {subtropical_land_area:.2e} m²")
-        print(f"Percentage of subtropical land: {subtropical_percentage:.2f}%")
+        if verbose:
+            print(f"Total raster area: {total_area:.2e} m²")
+            print(f"Subtropical land area: {subtropical_land_area:.2e} m²")
+            print(f"Percentage of subtropical land: {subtropical_percentage:.2f}%")
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
         for map in panalesis_maps:
@@ -122,14 +126,16 @@ def process_subtropical_land_area(source,version):
             total_area, subtropical_land_area = get_subtropical_area(data, metadata, transform,plot=False)
             subtropical_land_areas.append(subtropical_land_area)
             subtropical_percentage = subtropical_land_area / total_area * 100
-            print(map)
-            print(f"Total raster area: {total_area:.2e} m²")
-            print(f"Subtropical land area: {subtropical_land_area:.2e} m²")
-            print(f"Percentage of subtropical land: {subtropical_percentage:.2f}%")
+            if verbose:
+                print(map)
+                print(f"Total raster area: {total_area:.2e} m²")
+                print(f"Subtropical land area: {subtropical_land_area:.2e} m²")
+                print(f"Percentage of subtropical land: {subtropical_percentage:.2f}%")
         combined = list(zip(ages, subtropical_land_areas))
         combined.sort(key=lambda x: x[0])
         ages, subtropical_land_areas = zip(*combined)
-        plot_timeseries_simple(ages, subtropical_land_areas, 'Subtropical Land Area (m²)', 'Subtropical Land Area vs Age')
+        if verbose:
+            plot_timeseries_simple(ages, subtropical_land_areas, 'Subtropical Land Area (m²)', 'Subtropical Land Area vs Age')
     else:
         print(f"Incorrect source value, must be either PANALESIS or ETOPO")
     df = pd.DataFrame({
@@ -139,6 +145,6 @@ def process_subtropical_land_area(source,version):
     stat_out(df, join_on='Age', version=version, source=source)
 
 if __name__ == "__main__":
-   source = "ETOPO"
+   source = "PANALESIS"
    version = "v1"
    process_subtropical_land_area(source,version)
