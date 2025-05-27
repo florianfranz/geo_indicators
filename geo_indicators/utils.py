@@ -46,6 +46,7 @@ def load_tiff(file_path):
     with rasterio.open(file_path) as src:
         data = src.read()
         metadata = src.meta
+        src.close()
     return data, metadata
 
 

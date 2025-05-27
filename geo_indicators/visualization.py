@@ -60,11 +60,6 @@ def plot_timeseries_double(ages, metric1, metric1_name, metric2, metric2_name, t
     plt.show()
 
 
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-
 def heatmap_chart(source, version):
     df_path = get_output_csv_path(source, version)
     df = pd.read_csv(df_path)
@@ -72,11 +67,10 @@ def heatmap_chart(source, version):
     plt.figure(figsize=(12, 8))
     heatmap = sns.heatmap(df.drop('Age', axis=1).corr(), annot=True, cmap='coolwarm', linewidths=0.5)
 
-    # Adjust label rotation and font size
     heatmap.set_xticklabels(heatmap.get_xticklabels(), rotation=45, horizontalalignment='right', fontsize=10)
     heatmap.set_yticklabels(heatmap.get_yticklabels(), rotation=0, fontsize=10)
 
-    plt.tight_layout()  # Adjust layout to ensure everything fits within the plot area
+    plt.tight_layout()
     plt.show()
 
 def radar_chart(source,version):
@@ -102,6 +96,29 @@ def radar_chart(source,version):
     ax.set_xticklabels(area_columns)
     plt.legend(loc='upper right', bbox_to_anchor=(1.1, 1.1))
     plt.show()
+
+
+def plot_histogram(data, parameter, lower_percentile=1, upper_percentile=99):
+    # Convert to NumPy array
+    data = np.array(data)
+
+    # Calculate percentiles
+    lower = np.percentile(data, lower_percentile)
+    upper = np.percentile(data, upper_percentile)
+
+    # Filter data
+    filtered_data = data[(data >= lower) & (data <= upper)]
+
+    # Plot
+    plt.figure(figsize=(10, 6))
+    plt.hist(filtered_data, bins=50, log=True, edgecolor='black')
+    plt.title(f'Distribution of {parameter} (Filtered)')
+    plt.xlabel(f'{parameter}')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    plt.show()
+
+
 
 
 
