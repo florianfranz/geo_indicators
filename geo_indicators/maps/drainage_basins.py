@@ -416,7 +416,8 @@ def process_drainage_basins(source, version):
                 age = get_panalesis_age(map_path)
                 ages.append(age)
                 stats = run_panalesis_subprocess(map_path, min_area_m2)
-                if stats and stats:
+                print(stats)
+                if stats:
                     catch_means.append(stats.get('mean'))
                     catch_medians.append(stats.get('median'))
                     catch_stds.append(stats.get('std_dev'))
