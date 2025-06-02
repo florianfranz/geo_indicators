@@ -9,7 +9,8 @@ from geo_indicators.maps import (
     continental_shelves_area,
     oceans_area_volume,
     coastal_length,
-    continents_number
+    continents_number,
+    drainage_basins
 )
 
 def generate_stats(source,version):
@@ -24,4 +25,6 @@ def generate_stats(source,version):
     oceans_area_volume.process_area_volume(source,version)
     coastal_length.process_coastal_length(source,version)
     continents_number.process_continents_number(source,version)
+    drainage_basins.process_drainage_basins(source,version)
+
     print(f"Statistics exported for {version} of {source}")
