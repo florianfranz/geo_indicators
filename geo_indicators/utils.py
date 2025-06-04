@@ -125,9 +125,9 @@ def get_output_csv_path(source,version):
     data_dir = os.path.join(project_root, 'data')
     out_dir = os.path.join(data_dir, 'output')
     if source == "PANALESIS":
-        out_csv = os.path.join(out_dir, f"stats_PANALESIS_{version}.csv")
+        out_csv = os.path.join(out_dir, f"stats_{source}_{version}.csv")
     else:
-        out_csv = os.path.join(out_dir, f'stats_{version}.csv')
+        out_csv = os.path.join(out_dir, f'stats_{source}_2022.csv')
     return out_csv
 
 def stat_out(df, join_on,version,source):
