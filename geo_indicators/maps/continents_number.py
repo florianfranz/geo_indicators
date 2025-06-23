@@ -44,7 +44,7 @@ def process_continents_number(source,version,verbose=False):
         transform = metadata['transform']
         age = 0
         ages.append(age)
-        coastlines = create_contours(data,transform)
+        coastlines = create_contours(data,transform,0)
         large_polygons = filter_large_polygons(coastlines, min_area_m2)
         continents = len(large_polygons)
         continents_numbers.append(continents)
@@ -58,7 +58,7 @@ def process_continents_number(source,version,verbose=False):
             ages.append(age)
             data, metadata = load_tiff(map)
             transform = metadata['transform']
-            coastlines = create_contours(data, transform)
+            coastlines = create_contours(data, transform,0)
             large_polygons = filter_large_polygons(coastlines, min_area_m2)
             continents = len(large_polygons)
             continents_numbers.append(continents)

@@ -358,7 +358,7 @@ def process_single_panalesis_map(map_path, min_area_m2):
         if np.all(acc == 0):
             print("Accumulation data appears to be invalid (all zeros)", file=sys.stderr)
             return None
-        full_coastlines = create_contours(data, transform)
+        full_coastlines = create_contours(data, transform,0)
         coastlines = full_coastlines.simplify(tolerance=20000, preserve_topology=True)
         continents = filter_large_polygons(coastlines, min_area_m2)
         if len(continents) == 0:
@@ -481,7 +481,7 @@ def process_drainage_basins(source, version):
             fdir = get_flow_direction(grid, dem, dirmap)
             acc = grid.accumulation(fdir, dirmap=dirmap, nodata_out=np.int64(0))
             check_memory()
-            full_coastlines = create_contours(data, transform)
+            full_coastlines = create_contours(data, transform,0)
             coastlines = full_coastlines.simplify(tolerance=20000, preserve_topology=True)
             check_memory()
             continents = filter_large_polygons(coastlines, min_area_m2)

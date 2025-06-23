@@ -56,34 +56,40 @@ def close_contour(contour):
 
     return contour
 
-def create_contours(data,transform):
+def create_contours(data, transform, level):
     """
-        Process the input raster to create coastline contours.
+    Process the input raster to create coastline contours.
 
-        Returns:
-        -a geodataframe (gdf) with all contour features
-        """
-    # Dynamically get the paths for input and reprojected raster
-
-
+    Returns:
+    - a GeoDataFrame (gdf) with all contour features, or an empty GeoDataFrame if no contours are found.
+    """
     polygons = []
-    contours = measure.find_contours(data[0], 0)
+    contours = measure.find_contours(data[0], level)
+
+    if not contours:
+        return gpd.GeoDataFrame(geometry=[], crs='ESRI:54034')
+
     for contour in contours:
         transformed_contour = []
         for point in contour:
             x, y = transform * (point[1], point[0])  # Transform to geographic coordinates
             transformed_contour.append((x, y))
 
-        # Close the contour if needed
         closed_contour = close_contour(transformed_contour)
         if closed_contour:
             polygon = Polygon(closed_contour)
             if polygon.is_valid:
-                polygons.append({'geometry': polygon, 'level': 0})
+                polygons.append({'geometry': polygon, 'level': level})
+
+    if not polygons:
+        return gpd.GeoDataFrame(geometry=[], crs='ESRI:54034')
+
     gdf = gpd.GeoDataFrame(polygons)
+    gdf = gdf.set_geometry('geometry')
     gdf.set_crs('ESRI:54034', allow_override=True)
 
     return gdf
+
 
 
 def get_total_length(gdf):
@@ -121,7 +127,7 @@ def process_coastal_length(source,version,verbose=False):
         transform = metadata['transform']
         age = 0
         ages.append(age)
-        coastlines = create_contours(data,transform)
+        coastlines = create_contours(data,transform,0)
         if verbose:
             plot_gdf_simple(coastlines, "Coastlines")
         total_coastline_length = get_total_length(coastlines)
@@ -135,7 +141,7 @@ def process_coastal_length(source,version,verbose=False):
             ages.append(age)
             data, metadata = load_tiff(map)
             transform = metadata['transform']
-            coastlines = create_contours(data, transform)
+            coastlines = create_contours(data, transform,0)
             total_coastline_length = get_total_length(coastlines)
             total_coastline_lengths.append(total_coastline_length)
         combined = list(zip(ages, total_coastline_lengths))
@@ -151,6 +157,6 @@ def process_coastal_length(source,version,verbose=False):
     })
     stat_out(df, join_on='Age', version=version, source=source)
 if __name__ == "__main__":
-    source = "PANALESIS"
+    source = "ETOPO"
     version = "v1"
     process_coastal_length(source,version)
