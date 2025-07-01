@@ -23,6 +23,13 @@ def get_reproj_latitudes_bounds_path():
 
     return input_latitudes_path
 
+def get_reproj_MITgcm_nodes():
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(project_root, 'data')
+    input_MITgcm_nodes_path = os.path.join(data_dir, 'reproj_MITgcm_nodes.geojson')
+
+    return input_MITgcm_nodes_path
+
 def load_reproj_latitudes_bounds(file_path):
     gdf = gpd.read_file(file_path)
 
@@ -130,6 +137,12 @@ def get_output_csv_path(source,version):
         out_csv = os.path.join(out_dir, f'stats_{source}_2022.csv')
     return out_csv
 
+def get_out_dir_path(source,version):
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(project_root, 'data')
+    out_dir = os.path.join(data_dir, 'output')
+
+    return out_dir
 def stat_out(df, join_on,version,source):
     """
     Appends or creates a CSV file with new statistical data merged on a common key.
