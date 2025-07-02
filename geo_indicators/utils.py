@@ -107,6 +107,18 @@ def get_panalesis_maps(version):
 
     return tif_files
 
+def get_panalesis_nodes(version):
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(project_root, 'data','output')
+    version_dir = os.path.join(data_dir, f'PANALESIS_{version}')
+    nodes_files = [
+        os.path.join(version_dir, f)
+        for f in os.listdir(version_dir)
+        if os.path.isfile(os.path.join(version_dir, f)) and f.lower().endswith('.geojson') and f.lower().startswith('start_')
+    ]
+    return nodes_files
+
+
 
 def get_panalesis_age(file_path):
     # Extract the filename from the path
