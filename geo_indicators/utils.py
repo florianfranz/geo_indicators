@@ -114,7 +114,7 @@ def get_panalesis_nodes(version):
     nodes_files = [
         os.path.join(version_dir, f)
         for f in os.listdir(version_dir)
-        if os.path.isfile(os.path.join(version_dir, f)) and f.lower().endswith('.geojson') and f.lower().startswith('start_')
+        if os.path.isfile(os.path.join(version_dir, f)) and f.lower().endswith('.geojson') and f.lower().startswith('out_')
     ]
     return nodes_files
 

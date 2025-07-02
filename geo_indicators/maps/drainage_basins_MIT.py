@@ -11,7 +11,7 @@ from rasterio.features import rasterize
 from rasterio.transform import xy, rowcol
 from scipy.spatial import cKDTree
 from skimage import measure
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, shape
 from shapely.errors import GEOSException
 from shapely.ops import unary_union
 
@@ -76,8 +76,12 @@ def get_catchment_area(source,version,age,band,metadata):
     contour_levels = [0, -2000]
     polygons = []
     raster_crs = metadata['crs']
+    print(f"raster crs {raster_crs}")
     transform = metadata['transform']
     reproj_MITgcm_nodes_path = get_reproj_MITgcm_nodes()
+    gdf_points = gpd.read_file(reproj_MITgcm_nodes_path)
+    esri_54034_crs = gdf_points.crs
+    print(f"initial MITgcm nodes crs is {gdf_points.crs}")
     out_dir_path = get_out_dir_path(source, version)
     filled_raster_path = os.path.join(out_dir_path, f"{source}_{version}",f"{source}_{version}_{age}_filled.tif")
     out_reproj_MITgcm_nodes_path = os.path.join(out_dir_path, f"{source}_{version}", f"out_MITgcm_nodes_{age}.geojson")
@@ -99,6 +103,7 @@ def get_catchment_area(source,version,age,band,metadata):
 
     gdf = gpd.GeoDataFrame(polygons)
     gdf.set_crs(raster_crs, allow_override=True)
+    print(f"gdf crs are {gdf.crs}")
     # gdf.to_file(output_contours, driver='GeoJSON')
     level_0_polygons = gdf[gdf['level'] == 0]
     nested_polygons = []
@@ -159,7 +164,6 @@ def get_catchment_area(source,version,age,band,metadata):
     # If you want the result as a new GeoDataFrame
     dissolved_gdf = gpd.GeoDataFrame(geometry=[dissolved_geometry], crs=diff_gdf.crs)
     # plot_gdf_simple(dissolved_gdf, "Dissolved contours")
-    gdf_points = gpd.read_file(reproj_MITgcm_nodes_path)
     gdf_polygons = dissolved_gdf
     dissolved_polygon = gdf_polygons.geometry.union_all()
     # Check if each point is inside the dissolved polygon
@@ -235,6 +239,14 @@ def get_catchment_area(source,version,age,band,metadata):
     start_end_features = []
     # Process each point in the CSV with CONT=1
     out_ids = []
+    gdf_points["TYPE"] = "Other"
+
+    # Step 2: Set "Start" for all points with CONT == 1
+    gdf_points.loc[gdf_points["CONT"] == 1, "TYPE"] = "Start"
+
+    # Step 3: Track IDs of ocean points used as "End"
+    used_ocean_ids = set()
+
     for idx, row in gdf_points.iterrows():
         if row['CONT'] == 1:
             # Start point coordinates
@@ -247,9 +259,10 @@ def get_catchment_area(source,version,age,band,metadata):
             # Find the nearest ocean point to the last point in the flow path
             _, nearest_idx = tree.query(last_point_coords)  # Find nearest ocean point
             nearest_id = ocean_points[nearest_idx, 2]
+            used_ocean_ids.add(nearest_id)
             out_ids.append(nearest_id)
             # Add flow path to GeoJSON features
-            if flow_path_coords:
+            if flow_path_coords and len(flow_path_coords) >= 2:
                 geojson_features.append(geojson.Feature(
                     geometry=geojson.LineString(flow_path_coords),
                     properties={'ID': row['ID'], 'OUT_ID': nearest_id}
@@ -267,13 +280,18 @@ def get_catchment_area(source,version,age,band,metadata):
             # OUT_ID for ocean points (CONT=0) is their own ID
             out_ids.append(row['ID'])
     gdf_points['OUT_ID'] = out_ids
+    gdf_points.loc[gdf_points["ID"].isin(used_ocean_ids), "TYPE"] = "End"
     os.makedirs(os.path.dirname(out_reproj_MITgcm_nodes_path), exist_ok=True)
     gdf_points.to_file(out_reproj_MITgcm_nodes_path)
-    with open(flow_paths_geojson_path, 'w') as f:
-        geojson.dump(geojson.FeatureCollection(geojson_features), f)
-    print(f"Flow paths GeoJSON file saved to {flow_paths_geojson_path}")
-    with open(start_end_geojson_path, 'w') as f:
-        geojson.dump(geojson.FeatureCollection(start_end_features), f)
+
+    flows_gdf = gpd.GeoDataFrame(
+        [feature['properties'] for feature in geojson_features],
+        geometry=[shape(feature['geometry']) for feature in geojson_features],
+        crs=raster_crs)
+    flows_gdf.to_file(flow_paths_geojson_path)
+
+
+
     cell_width = abs(grid.affine.a)
     cell_height = abs(grid.affine.e)
     cell_area = cell_width * cell_height
@@ -285,8 +303,7 @@ def get_catchment_area(source,version,age,band,metadata):
     acc = grid.accumulation(fdir, dirmap=dirmap, nodata_out=np.int64(0))
     threshold = 100
 
-    start_end_points_gdf = gpd.read_file(start_end_geojson_path)
-    outlets = start_end_points_gdf[start_end_points_gdf['Type'] == 'End']
+    outlets = gdf_points[gdf_points['TYPE'] == 'End']
     outlets = outlets.reset_index()  # Retain original index for later mapping
     print(len(outlets))
 
@@ -334,9 +351,8 @@ def get_catchment_area(source,version,age,band,metadata):
     catchment_series = pd.Series(dict(catchment_areas))
 
     # Add the column to the original GeoDataFrame, aligning by index
-    start_end_points_gdf['catchment_area'] = start_end_points_gdf.index.map(catchment_series)
-    start_end_points_gdf.to_file(start_end_geojson_path, driver="GeoJSON")
-
+    gdf_points['catchment_area'] = gdf_points.index.map(catchment_series)
+    gdf_points.to_file(out_reproj_MITgcm_nodes_path)
 
     return catchment_areas
 

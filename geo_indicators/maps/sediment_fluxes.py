@@ -19,7 +19,7 @@ def calculate_tss(A):
     k = 0.075
     m = 0.8
     convert_m3ps_to_km3py = 0.000031536
-    R = 4.6
+    R = 2.5
     T = 10
     Q = k * (A_km2 ** m) * convert_m3ps_to_km3py
     return w * B * (Q ** 0.31) * (A_km2 ** 0.5) * R * T
@@ -27,11 +27,12 @@ def calculate_tss(A):
 
 def get_TSS_for_MITgcm_nodes(source, version, age):
     out_dir_path = get_out_dir_path(source, version)
-    start_end_geojson_path = os.path.join(out_dir_path, f"{source}_{version}", f"start_end_points_{age}.geojson")
+    print(out_dir_path)
+    MITgcm_nodes_path = os.path.join(out_dir_path, f"{source}_{version}", f"out_MITgcm_nodes_{age}.geojson")
 
-    print(f"Reading GeoJSON from: {start_end_geojson_path}")
+    print(f"Reading GeoJSON from: {MITgcm_nodes_path}")
 
-    MITgcm_nodes_gdf = gpd.read_file(start_end_geojson_path)
+    MITgcm_nodes_gdf = gpd.read_file(MITgcm_nodes_path)
 
     print("Calculating TSS...")
     MITgcm_nodes_gdf['TSS'] = MITgcm_nodes_gdf['catchment_area'].apply(calculate_tss)
@@ -41,12 +42,12 @@ def get_TSS_for_MITgcm_nodes(source, version, age):
 
     # Overwrite the file safely
     try:
-        if os.path.exists(start_end_geojson_path):
-            os.remove(start_end_geojson_path)
-            print(f"Old file deleted: {start_end_geojson_path}")
+        if os.path.exists(MITgcm_nodes_path):
+            os.remove(MITgcm_nodes_path)
+            print(f"Old file deleted: {MITgcm_nodes_path}")
 
-        MITgcm_nodes_gdf.to_file(start_end_geojson_path, driver="GeoJSON")
-        print(f"Updated GeoJSON saved to: {start_end_geojson_path}")
+        MITgcm_nodes_gdf.to_file(MITgcm_nodes_path, driver="GeoJSON")
+        print(f"Updated GeoJSON saved to: {MITgcm_nodes_path}")
     except Exception as e:
         print(f"Error saving GeoJSON: {e}")
 
@@ -59,6 +60,7 @@ def process_sediment_fluxes(source, version):
         get_TSS_for_MITgcm_nodes(source, version, age)
     elif source == "PANALESIS":
         panalesis_nodes = get_panalesis_nodes(version)
+        print(panalesis_nodes)
         for node in panalesis_nodes:
             age = get_panalesis_age(node)
             get_TSS_for_MITgcm_nodes(source, version, age)
