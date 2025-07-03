@@ -59,6 +59,22 @@ def plot_timeseries_double(ages, metric1, metric1_name, metric2, metric2_name, t
     plt.tight_layout()
     plt.show()
 
+def plot_scatter_from_gdf(gdf,var_x,var_y,log=False):
+    valid_data = gdf.dropna(subset=[var_x, var_y])
+
+    plt.figure(figsize=(8, 6))
+    plt.scatter(valid_data[var_x], valid_data[var_y], alpha=0.7, edgecolors='k')
+
+    plt.xlabel(var_x)
+    plt.ylabel(var_y)
+    plt.title(f"{var_y} vs {var_x}")
+    plt.grid(True)
+    plt.tight_layout()
+    if log:
+        plt.xscale('log')
+        plt.yscale('log')
+    plt.show()
+
 
 def heatmap_chart(source, version):
     df_path = get_output_csv_path(source, version)

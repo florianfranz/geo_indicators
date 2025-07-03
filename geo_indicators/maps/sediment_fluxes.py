@@ -4,13 +4,18 @@ import pandas as pd
 from geo_indicators.utils import (
     get_out_dir_path,
     get_panalesis_nodes,
-    get_panalesis_age)
+    get_panalesis_age
+)
+from geo_indicators.visualization import plot_scatter_from_gdf
 
 
-def calculate_tss(A):
-    if pd.isna(A):
+def calculate_tss(A, R):
+    if pd.isna(A) or pd.isna(R):
+        return None
+    elif R <= 0:
         return None
     A_km2 = A / 1_000_000
+    R_km = R / 1000
     w = 0.0006
     Ag = 0.5  # ice cover in catchment: 0 (0%) to 10 (100%)
     I = 1 + (0.09 * Ag)
@@ -19,10 +24,9 @@ def calculate_tss(A):
     k = 0.075
     m = 0.8
     convert_m3ps_to_km3py = 0.000031536
-    R = 2.5
     T = 10
     Q = k * (A_km2 ** m) * convert_m3ps_to_km3py
-    return w * B * (Q ** 0.31) * (A_km2 ** 0.5) * R * T
+    return w * B * (Q ** 0.31) * (A_km2 ** 0.5) * R_km * T
 
 
 def get_TSS_for_MITgcm_nodes(source, version, age):
@@ -30,26 +34,20 @@ def get_TSS_for_MITgcm_nodes(source, version, age):
     print(out_dir_path)
     MITgcm_nodes_path = os.path.join(out_dir_path, f"{source}_{version}", f"out_MITgcm_nodes_{age}.geojson")
 
-    print(f"Reading GeoJSON from: {MITgcm_nodes_path}")
-
     MITgcm_nodes_gdf = gpd.read_file(MITgcm_nodes_path)
 
-    print("Calculating TSS...")
-    MITgcm_nodes_gdf['TSS'] = MITgcm_nodes_gdf['catchment_area'].apply(calculate_tss)
+    MITgcm_nodes_gdf['TSS'] = MITgcm_nodes_gdf.apply(
+        lambda row: calculate_tss(row['catchment_area'], row['max_elevation']),
+        axis=1
+    )
 
-    print("Preview of calculated TSS values:")
-    print(MITgcm_nodes_gdf[['catchment_area', 'TSS']].head())
-
-    # Overwrite the file safely
     try:
         if os.path.exists(MITgcm_nodes_path):
             os.remove(MITgcm_nodes_path)
-            print(f"Old file deleted: {MITgcm_nodes_path}")
-
         MITgcm_nodes_gdf.to_file(MITgcm_nodes_path, driver="GeoJSON")
-        print(f"Updated GeoJSON saved to: {MITgcm_nodes_path}")
     except Exception as e:
         print(f"Error saving GeoJSON: {e}")
+    plot_scatter_from_gdf(MITgcm_nodes_gdf,'catchment_area','TSS',True)
 
 
 def process_sediment_fluxes(source, version):
@@ -65,7 +63,8 @@ def process_sediment_fluxes(source, version):
             age = get_panalesis_age(node)
             get_TSS_for_MITgcm_nodes(source, version, age)
 
+
 if __name__ == "__main__":
-    source = "PANALESIS"
+    source = "ETOPO"
     version = "v1"
     process_sediment_fluxes(source, version)

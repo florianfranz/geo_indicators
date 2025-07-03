@@ -307,7 +307,7 @@ def get_catchment_area(source,version,age,band,metadata):
     outlets = outlets.reset_index()  # Retain original index for later mapping
     print(len(outlets))
 
-    catchment_areas = []
+    catchment_stats = []
 
     for i, row in outlets.iterrows():
         idx = row['index']  # original index in start_end_points_gdf
@@ -317,7 +317,11 @@ def get_catchment_area(source,version,age,band,metadata):
                 y <= ymin + buffer_y or y >= ymax - buffer_y
         ):
             print(f"Outlet {idx} skipped: too close to raster edge.")
-            catchment_areas.append((idx, np.nan))
+            catchment_stats.append({
+                'index': idx,
+                'area': np.nan,
+                'max_elevation': np.nan
+            })
             continue
 
         try:
@@ -327,7 +331,11 @@ def get_catchment_area(source,version,age,band,metadata):
                     y_snap <= ymin + buffer_y or y_snap >= ymax - buffer_y
             ):
                 print(f"Outlet {idx} skipped after snapping: snapped point too close to raster edge.")
-                catchment_areas.append((idx, np.nan))
+                catchment_stats.append({
+                    'index': idx,
+                    'area': np.nan,
+                    'max_elevation': np.nan
+                })
                 continue
 
             catch = grid.catchment(
@@ -336,25 +344,39 @@ def get_catchment_area(source,version,age,band,metadata):
                 xytype='coordinate'
             )
             catch_array = catch.view()
+            masked_dem = np.where(catch.view(), dem, np.nan)
+
+            max_elevation = np.nanmax(masked_dem)
+            print(max_elevation)
             num_cells = np.count_nonzero(catch_array)
             catchment_area = num_cells * cell_area
-            catchment_areas.append((idx, catchment_area))
+
+            catchment_stats.append({
+                'index': idx,
+                'area': catchment_area,
+                'max_elevation': max_elevation
+            })
 
             del catch, catch_array
             gc.collect()
         except Exception as e:
             print(f"Outlet {idx} failed during catchment extraction: {e}")
-            catchment_areas.append((idx, np.nan))
+            catchment_stats.append({
+                'index': idx,
+                'area': np.nan,
+                'max_elevation': np.nan
+            })
             continue
+    catchment_df = pd.DataFrame(catchment_stats).set_index('index')
+    area_series = catchment_df['area']
+    max_elev_series = catchment_df['max_elevation']
 
-    # Create a Series with catchment_area values mapped by index
-    catchment_series = pd.Series(dict(catchment_areas))
+    gdf_points['catchment_area'] = gdf_points.index.map(area_series)
+    gdf_points['max_elevation'] = gdf_points.index.map(max_elev_series)
 
-    # Add the column to the original GeoDataFrame, aligning by index
-    gdf_points['catchment_area'] = gdf_points.index.map(catchment_series)
     gdf_points.to_file(out_reproj_MITgcm_nodes_path)
 
-    return catchment_areas
+    return catchment_stats
 
 
 def process_drainage_basins_MITgcm(source, version):
@@ -372,26 +394,25 @@ def process_drainage_basins_MITgcm(source, version):
         band = data[0]
         age = 0
         ages.append(age)
-        catchment_areas = get_catchment_area(source,version,age,band,metadata)
+        catchment_stats = get_catchment_area(source,version,age,band,metadata)
     elif source == "PANALESIS":
         panalesis_maps = get_panalesis_maps(version)
         for map in panalesis_maps:
             age = get_panalesis_age(map)
             ages.append(age)
             data, metadata = load_tiff(map)
-            transform = metadata['transform']
             band = data[0]
-            catchment_areas = get_catchment_area(source, version, age, band, metadata)
+            catchment_stats = get_catchment_area(source, version, age, band, metadata)
 
 
-    return catchment_areas
+    return catchment_stats
 
 
 
 if __name__ == "__main__":
-    source = "PANALESIS"
-    version = "v1"
-    catchment_areas = process_drainage_basins_MITgcm(source, version)
+    source = "ETOPO"
+    version = "v0_3"
+    catchment_stats = process_drainage_basins_MITgcm(source, version)
 
 
 
