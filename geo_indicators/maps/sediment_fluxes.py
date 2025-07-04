@@ -6,7 +6,7 @@ from geo_indicators.utils import (
     get_panalesis_nodes,
     get_panalesis_age
 )
-from geo_indicators.visualization import plot_scatter_from_gdf
+from geo_indicators.visualization import plot_scatter_from_gdf_ref
 
 
 def calculate_tss(A, R):
@@ -47,7 +47,7 @@ def get_TSS_for_MITgcm_nodes(source, version, age):
         MITgcm_nodes_gdf.to_file(MITgcm_nodes_path, driver="GeoJSON")
     except Exception as e:
         print(f"Error saving GeoJSON: {e}")
-    plot_scatter_from_gdf(MITgcm_nodes_gdf,'catchment_area','TSS',True)
+    plot_scatter_from_gdf_ref(MITgcm_nodes_gdf,'catchment_area','TSS',True)
 
 
 def process_sediment_fluxes(source, version):
@@ -65,6 +65,6 @@ def process_sediment_fluxes(source, version):
 
 
 if __name__ == "__main__":
-    source = "ETOPO"
-    version = "v1"
+    source = "PANALESIS"
+    version = "v0_3"
     process_sediment_fluxes(source, version)

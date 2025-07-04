@@ -118,7 +118,25 @@ def get_panalesis_nodes(version):
     ]
     return nodes_files
 
+def get_flow_paths(source,version):
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(project_root, 'data', 'output')
+    version_dir = os.path.join(data_dir, f'{source}_{version}')
+    flow_paths_files = [
+        os.path.join(version_dir, f)
+        for f in os.listdir(version_dir)
+        if
+        os.path.isfile(os.path.join(version_dir, f)) and f.lower().endswith('.geojson') and f.lower().startswith('flow_')
+    ]
+    return flow_paths_files
 
+
+def get_ETOPO_nodes_path():
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(project_root, 'data', 'output')
+    ETOPO_nodes_path = os.path.join(data_dir, "ETOPO_2022", "out_MITgcm_nodes_0.geojson")
+
+    return ETOPO_nodes_path
 
 def get_panalesis_age(file_path):
     # Extract the filename from the path

@@ -25,7 +25,7 @@ from geo_indicators.utils import (
     get_out_dir_path,
     get_panalesis_maps,
     get_panalesis_age,
-    stat_out
+    get_flow_paths
 )
 from geo_indicators.visualization import plot_gdf_simple
 
@@ -290,8 +290,6 @@ def get_catchment_area(source,version,age,band,metadata):
         crs=raster_crs)
     flows_gdf.to_file(flow_paths_geojson_path)
 
-
-
     cell_width = abs(grid.affine.a)
     cell_height = abs(grid.affine.e)
     cell_area = cell_width * cell_height
@@ -378,6 +376,16 @@ def get_catchment_area(source,version,age,band,metadata):
 
     return catchment_stats
 
+def reproj_flow_paths(source,version):
+    if source == "ETOPO":
+        if version != "2022":
+            version = "2022"
+    flow_paths = get_flow_paths(source,version)
+    for flow_path in flow_paths:
+        flows_gdf = gpd.read_file(flow_path)
+        flows_gdf = flows_gdf.set_crs("ESRI:54034", allow_override=True)
+        flows_gdf.to_file(flow_path)
+
 
 def process_drainage_basins_MITgcm(source, version):
     ages = []
@@ -411,8 +419,9 @@ def process_drainage_basins_MITgcm(source, version):
 
 if __name__ == "__main__":
     source = "ETOPO"
-    version = "v0_3"
+    version = "2022"
     catchment_stats = process_drainage_basins_MITgcm(source, version)
+    reproj_flow_paths(source, version)
 
 
 

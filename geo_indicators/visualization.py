@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
+import geopandas as gpd
 import pandas as pd
 import numpy as np
 import seaborn as sns
-from geo_indicators.utils import get_output_csv_path
+from geo_indicators.utils import get_output_csv_path, get_ETOPO_nodes_path
 
 def plot_mask(mask, title):
     plt.figure(figsize=(10, 6))
@@ -59,20 +60,104 @@ def plot_timeseries_double(ages, metric1, metric1_name, metric2, metric2_name, t
     plt.tight_layout()
     plt.show()
 
-def plot_scatter_from_gdf(gdf,var_x,var_y,log=False):
+
+def plot_scatter_from_gdf(gdf, var_x, var_y, log=False, quantile_range=(0.01, 0.99)):
     valid_data = gdf.dropna(subset=[var_x, var_y])
+    qx_low, qx_high = valid_data[var_x].quantile(quantile_range)
+    qy_low, qy_high = valid_data[var_y].quantile(quantile_range)
+    filtered_data = valid_data[
+        (valid_data[var_x] >= qx_low) & (valid_data[var_x] <= qx_high) &
+        (valid_data[var_y] >= qy_low) & (valid_data[var_y] <= qy_high)
+        ]
 
     plt.figure(figsize=(8, 6))
-    plt.scatter(valid_data[var_x], valid_data[var_y], alpha=0.7, edgecolors='k')
+    scatter = plt.scatter(
+        filtered_data[var_x],
+        filtered_data[var_y],
+        c=filtered_data['max_elevation'],
+        cmap='viridis',
+        alpha=0.7,
+        edgecolors='k'
+    )
+    plt.colorbar(scatter, label='Max Elevation (m)')
 
-    plt.xlabel(var_x)
-    plt.ylabel(var_y)
-    plt.title(f"{var_y} vs {var_x}")
+    plt.xlabel(f"{var_x} (m²)")
+    plt.ylabel(f"{var_y} (MT/year)")
+    plt.title(f"{var_y} vs {var_x} (colored by max_elevation)")
     plt.grid(True)
     plt.tight_layout()
+
     if log:
         plt.xscale('log')
         plt.yscale('log')
+
+    plt.show()
+
+def plot_scatter_from_gdf_ref(
+    gdf,
+    var_x,
+    var_y,
+    log=False,
+    quantile_range=(0.01, 0.99),
+):
+    reference_path = get_ETOPO_nodes_path()
+    try:
+        reference_gdf = gpd.read_file(reference_path)
+    except Exception as e:
+        print(f"Error loading reference GeoJSON: {e}")
+        reference_gdf = None
+
+    valid_data = gdf.dropna(subset=[var_x, var_y, 'max_elevation'])
+    qx_low, qx_high = valid_data[var_x].quantile(quantile_range)
+    qy_low, qy_high = valid_data[var_y].quantile(quantile_range)
+    filtered_data = valid_data[
+        (valid_data[var_x] >= qx_low) & (valid_data[var_x] <= qx_high) &
+        (valid_data[var_y] >= qy_low) & (valid_data[var_y] <= qy_high)
+    ]
+
+    if reference_gdf is not None:
+        reference_gdf = reference_gdf.dropna(subset=[var_x, var_y])
+        qx_r_low, qx_r_high = reference_gdf[var_x].quantile(quantile_range)
+        qy_r_low, qy_r_high = reference_gdf[var_y].quantile(quantile_range)
+        reference_data = reference_gdf[
+            (reference_gdf[var_x] >= qx_r_low) & (reference_gdf[var_x] <= qx_r_high) &
+            (reference_gdf[var_y] >= qy_r_low) & (reference_gdf[var_y] <= qy_r_high)
+        ]
+    else:
+        reference_data = None
+
+    plt.figure(figsize=(8, 6))
+
+    if reference_data is not None and not reference_data.empty:
+        plt.scatter(
+            reference_data[var_x],
+            reference_data[var_y],
+            color='darkgrey',
+            alpha=0.5,
+            edgecolors='none',
+            label='Reference (ETOPO)'
+        )
+    scatter = plt.scatter(
+        filtered_data[var_x],
+        filtered_data[var_y],
+        c=filtered_data['max_elevation'],
+        cmap='viridis',
+        alpha=0.8,
+        edgecolors='k',
+        label='PANALESIS v1 - 330 Ma'
+    )
+    plt.colorbar(scatter, label='Max Elevation (m)')
+    plt.xlabel(f"{var_x} (m²)")
+    plt.ylabel(f"{var_y} (MT/year)")
+    plt.title(f"{var_y} vs {var_x} (colored by max_elevation)")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.legend()
+
+    if log:
+        plt.xscale('log')
+        plt.yscale('log')
+
     plt.show()
 
 
