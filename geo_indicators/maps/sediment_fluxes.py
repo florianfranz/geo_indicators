@@ -26,7 +26,8 @@ def calculate_tss(A, R):
     convert_m3ps_to_km3py = 0.000031536
     T = 10
     Q = k * (A_km2 ** m) * convert_m3ps_to_km3py
-    return w * B * (Q ** 0.31) * (A_km2 ** 0.5) * R_km * T
+    TSS = w * B * (Q ** 0.31) * (A_km2 ** 0.5) * R_km * T
+    return TSS, Q
 
 
 def get_TSS_for_MITgcm_nodes(source, version, age):
@@ -36,8 +37,8 @@ def get_TSS_for_MITgcm_nodes(source, version, age):
 
     MITgcm_nodes_gdf = gpd.read_file(MITgcm_nodes_path)
 
-    MITgcm_nodes_gdf['TSS'] = MITgcm_nodes_gdf.apply(
-        lambda row: calculate_tss(row['catchment_area'], row['max_elevation']),
+    MITgcm_nodes_gdf[['TSS', 'Qw']] = MITgcm_nodes_gdf.apply(
+        lambda row: pd.Series(calculate_tss(row['catchment_area'], row['max_elevation'])),
         axis=1
     )
 
@@ -61,7 +62,8 @@ def process_sediment_fluxes(source, version):
         print(panalesis_nodes)
         for node in panalesis_nodes:
             age = get_panalesis_age(node)
-            get_TSS_for_MITgcm_nodes(source, version, age)
+            if age == 330:
+                get_TSS_for_MITgcm_nodes(source, version, age)
 
 
 if __name__ == "__main__":
