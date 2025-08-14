@@ -1,3 +1,6 @@
+
+![](images/logo3.png)
+
 # A Python Package to Create Indices Characterizing the Geography of the Earth for Climate Modelling
 
 ## Introduction
