@@ -6,10 +6,13 @@ from geo_indicators.utils import (
     get_panalesis_nodes,
     get_panalesis_age
 )
-from geo_indicators.visualization import plot_scatter_from_gdf_ref
+from geo_indicators.visualization import (
+    plot_scatter_from_gdf_ref,
+    plot_scatter_from_gdf
+)
 
 
-def calculate_tss(A, R):
+def calculate_tss(A, R, T):
     if pd.isna(A) or pd.isna(R):
         return None
     elif R <= 0:
@@ -24,7 +27,6 @@ def calculate_tss(A, R):
     k = 0.075
     m = 0.8
     convert_m3ps_to_km3py = 0.000031536
-    T = 10
     Q = k * (A_km2 ** m) * convert_m3ps_to_km3py
     TSS = w * B * (Q ** 0.31) * (A_km2 ** 0.5) * R_km * T
     return TSS, Q
@@ -38,7 +40,7 @@ def get_TSS_for_MITgcm_nodes(source, version, age):
     MITgcm_nodes_gdf = gpd.read_file(MITgcm_nodes_path)
 
     MITgcm_nodes_gdf[['TSS', 'Qw']] = MITgcm_nodes_gdf.apply(
-        lambda row: pd.Series(calculate_tss(row['catchment_area'], row['max_elevation'])),
+        lambda row: pd.Series(calculate_tss(row['catchment_area'], row['max_elevation'],row['mean_temperature'])),
         axis=1
     )
 
@@ -48,7 +50,10 @@ def get_TSS_for_MITgcm_nodes(source, version, age):
         MITgcm_nodes_gdf.to_file(MITgcm_nodes_path, driver="GeoJSON")
     except Exception as e:
         print(f"Error saving GeoJSON: {e}")
-    plot_scatter_from_gdf_ref(MITgcm_nodes_gdf,'catchment_area','TSS',True)
+    if source == "PANALESIS":
+        plot_scatter_from_gdf_ref(MITgcm_nodes_gdf,'catchment_area','TSS',age,version,True)
+    else:
+        plot_scatter_from_gdf(MITgcm_nodes_gdf, 'catchment_area','TSS',True)
 
 
 def process_sediment_fluxes(source, version):
@@ -62,11 +67,11 @@ def process_sediment_fluxes(source, version):
         print(panalesis_nodes)
         for node in panalesis_nodes:
             age = get_panalesis_age(node)
-            if age == 330:
+            if age < 100:
                 get_TSS_for_MITgcm_nodes(source, version, age)
 
 
 if __name__ == "__main__":
-    source = "PANALESIS"
-    version = "v0_3"
+    source = "ETOPO"
+    version = "2022"
     process_sediment_fluxes(source, version)

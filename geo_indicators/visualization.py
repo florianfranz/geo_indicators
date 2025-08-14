@@ -70,7 +70,7 @@ def plot_scatter_from_gdf(gdf, var_x, var_y, log=False, quantile_range=(0.01, 0.
         (valid_data[var_y] >= qy_low) & (valid_data[var_y] <= qy_high)
         ]
 
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(12, 6))
     scatter = plt.scatter(
         filtered_data[var_x],
         filtered_data[var_y],
@@ -83,7 +83,6 @@ def plot_scatter_from_gdf(gdf, var_x, var_y, log=False, quantile_range=(0.01, 0.
 
     plt.xlabel(f"{var_x} (m²)")
     plt.ylabel(f"{var_y} (MT/year)")
-    plt.title(f"{var_y} vs {var_x} (colored by max_elevation)")
     plt.grid(True)
     plt.tight_layout()
 
@@ -97,6 +96,8 @@ def plot_scatter_from_gdf_ref(
     gdf,
     var_x,
     var_y,
+    age,
+    version,
     log=False,
     quantile_range=(0.01, 0.99),
 ):
@@ -126,7 +127,7 @@ def plot_scatter_from_gdf_ref(
     else:
         reference_data = None
 
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(12, 6))
 
     if reference_data is not None and not reference_data.empty:
         plt.scatter(
@@ -144,12 +145,11 @@ def plot_scatter_from_gdf_ref(
         cmap='viridis',
         alpha=0.8,
         edgecolors='k',
-        label='PANALESIS v1 - 330 Ma'
+        label=f'PANALESIS {version} - {age} Ma'
     )
     plt.colorbar(scatter, label='Max Elevation (m)')
     plt.xlabel(f"{var_x} (m²)")
     plt.ylabel(f"{var_y} (MT/year)")
-    plt.title(f"{var_y} vs {var_x} (colored by max_elevation)")
     plt.grid(True)
     plt.tight_layout()
     plt.legend()

@@ -138,6 +138,14 @@ def get_ETOPO_nodes_path():
 
     return ETOPO_nodes_path
 
+def get_temperatures_map():
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(project_root, 'data', 'output')
+    temperatures_nc_path = os.path.join(data_dir, "pl_go_gs_panal000_3000yrs_280ppm.nc")
+
+    return temperatures_nc_path
+
+
 def get_panalesis_age(file_path):
     # Extract the filename from the path
     filename = os.path.basename(file_path)
