@@ -28,7 +28,14 @@ def calculate_tss(A, R, T):
     m = 0.8
     convert_m3ps_to_km3py = 0.000031536
     Q = k * (A_km2 ** m) * convert_m3ps_to_km3py
-    TSS = w * B * (Q ** 0.31) * (A_km2 ** 0.5) * R_km * T
+    if T >= 2:
+        TSS = w * B * (Q ** 0.31) * (A_km2 ** 0.5) * R_km * T
+    elif T <2:
+        TSS = 2 *w * B * (Q ** 0.31) * (A_km2 ** 0.5) * R_km * T
+    else:
+        print("Temperature value is incorrect")
+        TSS = 99999
+
     return TSS, Q
 
 

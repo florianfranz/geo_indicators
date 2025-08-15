@@ -274,7 +274,6 @@ def get_catchment_area(source,version,age,band,metadata):
                 x <= xmin + buffer_x or x >= xmax - buffer_x or
                 y <= ymin + buffer_y or y >= ymax - buffer_y
         ):
-            print("case 1: all nan because flow end is outside bounds")
             catchment_stats.append({
                 'index': idx,
                 'area': np.nan,
@@ -288,7 +287,6 @@ def get_catchment_area(source,version,age,band,metadata):
                     x_snap <= xmin + buffer_x or x_snap >= xmax - buffer_x or
                     y_snap <= ymin + buffer_y or y_snap >= ymax - buffer_y
             ):
-                print("case 2: all nan because flow end snapped point is outside bounds")
                 catchment_stats.append({
                     'index': idx,
                     'area': np.nan,
@@ -310,29 +308,14 @@ def get_catchment_area(source,version,age,band,metadata):
 
                 wgs84_coords = [transformer.transform(x, y) for x, y in projected_coords]
                 contours_wgs84.append(wgs84_coords)
-
-            lon_end, lat_end = transformer.transform(x, y)
-            lon_snap, lat_snap = transformer.transform(x_snap,y_snap)
-
-            fig, ax = plt.subplots()
             centroids = []
             for contour in contours_wgs84:
-                lons, lats = zip(*contour)
-                ax.plot(lons, lats, 'b-')
                 polygon = Polygon(contour)
                 centroid = polygon.centroid
 
                 centroid_lon = centroid.x
                 centroid_lat = centroid.y
-                print(centroid_lon,centroid_lat)
-                ax.plot(centroid_lon,centroid_lat,'bo',label='Catchment Centroid')
                 centroids.append((centroid_lon, centroid_lat))
-            ax.plot(lon_snap, lat_snap, 'go', label='Catchment End Point')
-            ax.plot(lon_end, lat_end, 'ro', label='Nearest MITgcm Outlet')
-            ax.set_xlabel('Longitude [°]')
-            ax.set_ylabel('Latitude [°]')
-            ax.legend()
-            plt.show()
 
             ds = xr.open_dataset(netcdf_path)
             temperature = ds[var_name]
@@ -348,7 +331,6 @@ def get_catchment_area(source,version,age,band,metadata):
             max_elevation = np.nanmax(masked_dem)
             num_cells = np.count_nonzero(catch_array)
             catchment_area = num_cells * cell_area
-            print("Case 3: Able to calculate catchment statistics")
             catchment_stats.append({
                 'index': idx,
                 'area': catchment_area,
@@ -358,7 +340,6 @@ def get_catchment_area(source,version,age,band,metadata):
             del catch, catch_array
             gc.collect()
         except Exception as e:
-            print("case 4: all nan because error")
             print(e)
             catchment_stats.append({
                 'index': idx,
